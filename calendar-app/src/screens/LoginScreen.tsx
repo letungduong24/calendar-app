@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { toast } from 'react-native-sonner';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -23,7 +24,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      toast.error('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
@@ -31,8 +32,7 @@ export default function LoginScreen({ navigation }: any) {
       setLoading(true);
       await login({ email, password });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Đăng nhập thất bại';
-      Alert.alert('Lỗi', Array.isArray(message) ? message[0] : message);
+      // Handled by store toast
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export default function LoginScreen({ navigation }: any) {
         }
       }
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể đăng nhập bằng Google');
+      toast.error('Không thể đăng nhập bằng Google');
     } finally {
       setGoogleLoading(false);
     }

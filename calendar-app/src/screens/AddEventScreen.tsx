@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, Alert, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { toast } from 'react-native-sonner';
 import { Calendar, Clock, Type, X, UserPlus, CheckCircle2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -42,6 +43,7 @@ export default function AddEventScreen({ navigation, route }: any) {
   );
   const [showTimePicker, setShowTimePicker] = useState(false);
   
+  const [hasEndTime, setHasEndTime] = useState(isEditing ? !!editAppointment?.endTime : true);
   const [endTimeObj, setEndTimeObj] = useState(() => {
     if (isEditing && editAppointment?.endTime) return parseTime(editAppointment.endTime);
     let t = new Date();
@@ -69,7 +71,7 @@ export default function AddEventScreen({ navigation, route }: any) {
       setQuickFriendName('');
       setIsAddingQuickFriend(false);
     } catch (e) {
-      Alert.alert('Lỗi', 'Không thể thêm bạn nhanh');
+      toast.error('Không thể thêm bạn nhanh');
     }
   };
 
@@ -81,13 +83,15 @@ export default function AddEventScreen({ navigation, route }: any) {
 
   const handleSave = async () => {
     if (!title) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề');
+      toast.error('Vui lòng nhập tiêu đề');
       return;
     }
     
     const finalDate = dateObj.toISOString().split('T')[0];
     const finalTime = timeObj.getHours().toString().padStart(2, '0') + ':' + timeObj.getMinutes().toString().padStart(2, '0');
-    const finalEndTime = endTimeObj.getHours().toString().padStart(2, '0') + ':' + endTimeObj.getMinutes().toString().padStart(2, '0');
+    const finalEndTime = hasEndTime 
+      ? endTimeObj.getHours().toString().padStart(2, '0') + ':' + endTimeObj.getMinutes().toString().padStart(2, '0')
+      : null;
     
     try {
       setSaving(true);
@@ -108,7 +112,7 @@ export default function AddEventScreen({ navigation, route }: any) {
       
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Lỗi', 'Không thể lưu lịch hẹn');
+      // Handled by store
     } finally {
       setSaving(false);
     }
@@ -161,7 +165,7 @@ export default function AddEventScreen({ navigation, route }: any) {
                 value={dateObj}
                 mode="date"
                 display="default"
-                onChange={(e, date) => {
+                onChange={(event, date) => {
                   setShowDatePicker(Platform.OS === 'ios');
                   if (date) setDateObj(date);
                 }}
@@ -185,15 +189,24 @@ export default function AddEventScreen({ navigation, route }: any) {
             </View>
 
             <View style={[styles.formGroup, { flex: 1 }]}>
-              <ThemeText variant="small" color={Colors.textSecondary} style={styles.label}>KẾT THÚC</ThemeText>
+              <View style={styles.labelRow}>
+                <ThemeText variant="small" color={Colors.textSecondary} style={styles.label}>KẾT THÚC</ThemeText>
+                <TouchableOpacity onPress={() => setHasEndTime(!hasEndTime)}>
+                  <ThemeText variant="small" color={hasEndTime ? Colors.error : Colors.primary} style={{ fontWeight: '700' }}>
+                    {hasEndTime ? 'Gỡ bỏ' : 'Thiết lập'}
+                  </ThemeText>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity 
-                activeOpacity={0.8} 
-                style={styles.inputContainer} 
-                onPress={() => setShowEndTimePicker(true)}
+                activeOpacity={hasEndTime ? 0.8 : 1} 
+                style={[styles.inputContainer, !hasEndTime && { opacity: 0.5 }]} 
+                onPress={() => hasEndTime && setShowEndTimePicker(true)}
               >
                 <Clock color={Colors.textTertiary} size={20} style={styles.inputIcon} />
-                <ThemeText style={styles.inputValue}>
-                  {endTimeObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                <ThemeText style={[styles.inputValue, !hasEndTime && { color: Colors.textTertiary }]}>
+                  {hasEndTime 
+                    ? endTimeObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                    : 'Chưa thiết lập'}
                 </ThemeText>
               </TouchableOpacity>
             </View>
@@ -220,10 +233,28 @@ export default function AddEventScreen({ navigation, route }: any) {
           </View>
 
           {showTimePicker && (
-            <DateTimePicker value={timeObj} mode="time" is24Hour={true} display="default" onChange={(e, t) => { setShowTimePicker(Platform.OS === 'ios'); if (t) setTimeObj(t); }} />
+            <DateTimePicker 
+              value={timeObj} 
+              mode="time" 
+              is24Hour={true} 
+              display="default" 
+              onChange={(event, date) => {
+                setShowTimePicker(Platform.OS === 'ios');
+                if (date) setTimeObj(date);
+              }}
+            />
           )}
           {showEndTimePicker && (
-            <DateTimePicker value={endTimeObj} mode="time" is24Hour={true} display="default" onChange={(e, t) => { setShowEndTimePicker(Platform.OS === 'ios'); if (t) setEndTimeObj(t); }} />
+            <DateTimePicker 
+              value={endTimeObj} 
+              mode="time" 
+              is24Hour={true} 
+              display="default" 
+              onChange={(event, date) => {
+                setShowEndTimePicker(Platform.OS === 'ios');
+                if (date) setEndTimeObj(date);
+              }}
+            />
           )}
 
           <View style={styles.formGroup}>

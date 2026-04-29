@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -24,7 +24,7 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<{ access_token: string; user: Partial<User> }> {
     const existingUser = await this.usersService.findOneByEmail(registerDto.email);
     if (existingUser) {
-      throw new Error('Người dùng đã tồn tại');
+      throw new ConflictException('Email này đã được đăng ký');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
@@ -58,7 +58,7 @@ export class AuthService {
   }): Promise<{ access_token: string; user: Partial<User> }> {
     const dbUser = await this.usersService.findOrCreateGoogleUser(user);
     if (!dbUser) {
-      throw new Error('Không thể tìm thấy hoặc tạo người dùng từ Google');
+      throw new InternalServerErrorException('Không thể tìm thấy hoặc tạo người dùng từ Google');
     }
     return this.login(dbUser);
   }

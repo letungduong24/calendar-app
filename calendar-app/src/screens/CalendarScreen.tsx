@@ -13,7 +13,7 @@ export default function CalendarScreen({ navigation }: any) {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const todayDate = new Date();
-  const todayStr = todayDate.toISOString().split('T')[0];
+  const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
   const { appointments, isLoading, deleteAppointment } = useAppointments(todayStr);
 
   const daysVi = ['CHỦ NHẬT', 'THỨ HAI', 'THỨ BA', 'THỨ TƯ', 'THỨ NĂM', 'THỨ SÁU', 'THỨ BẢY'];
@@ -52,27 +52,33 @@ export default function CalendarScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.dateHeader}>
-          <View style={styles.unifiedDateCard}>
-            <View style={styles.dateTextContainer}>
-              <ThemeText style={styles.dayOfWeek}>{dayOfWeek}</ThemeText>
-              <View style={styles.dateRow}>
-                <ThemeText style={styles.dateNum}>{dayMonth}</ThemeText>
-                <ThemeText style={styles.monthLabel}> {monthName}</ThemeText>
-              </View>
+      {/* Fixed Header Section */}
+      <View style={styles.dateHeader}>
+        <View style={styles.unifiedDateCard}>
+          <View style={styles.dateTextContainer}>
+            <ThemeText style={styles.dayOfWeek}>{dayOfWeek}</ThemeText>
+            <View style={styles.dateRow}>
+              <ThemeText style={styles.dateNum}>{dayMonth}</ThemeText>
+              <ThemeText style={styles.monthLabel}> {monthName}</ThemeText>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.circlePlus} 
-              onPress={() => navigation.navigate('AddEvent', { initialDate: todayStr })}
-            >
-              <Plus size={24} color={Colors.white} />
-            </TouchableOpacity>
           </View>
-          <ThemeText style={styles.subTitle}>Lịch hẹn hôm nay</ThemeText>
+          
+          <TouchableOpacity 
+            style={styles.circlePlus} 
+            onPress={() => navigation.navigate('AddEvent', { initialDate: todayStr })}
+          >
+            <Plus size={24} color={Colors.white} />
+          </TouchableOpacity>
         </View>
+        <ThemeText style={styles.subTitle}>Lịch hẹn hôm nay</ThemeText>
+      </View>
 
+      {/* Scrollable Appointments Section */}
+      <ScrollView 
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         {isLoading ? (
           <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 50 }} />
         ) : appointments.length > 0 ? (
@@ -106,8 +112,13 @@ export default function CalendarScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  scrollArea: { flex: 1 },
   scrollContent: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
-  dateHeader: { marginTop: Spacing.md, marginBottom: Spacing.xl },
+  dateHeader: { 
+    marginTop: Spacing.md, 
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
   unifiedDateCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.xl,

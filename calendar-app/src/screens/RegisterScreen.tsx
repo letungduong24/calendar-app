@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { toast } from 'react-native-sonner';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';
@@ -16,7 +17,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      toast.error('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
@@ -24,8 +25,7 @@ export default function RegisterScreen({ navigation }: any) {
       setLoading(true);
       await register({ name, email, password });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Đăng ký thất bại';
-      Alert.alert('Lỗi', Array.isArray(message) ? message[0] : message);
+      // Handled by store
     } finally {
       setLoading(false);
     }

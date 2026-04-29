@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { toast } from 'react-native-sonner';
+import { useAlertStore } from '../store/useAlertStore';
 import { User, Mail, Lock, LogOut, Camera } from 'lucide-react-native';
 import { Colors, Spacing, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';
@@ -13,14 +15,21 @@ export default function ProfileScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Sync local name state with user state from store
+  React.useEffect(() => {
+    if (user?.name) {
+      setName(user.name);
+    }
+  }, [user?.name]);
+
   const handleUpdateProfile = async () => {
     if (!name.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên');
+      toast.error('Vui lòng nhập tên');
       return;
     }
 
     if (password && password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      toast.error('Mật khẩu xác nhận không khớp');
       return;
     }
 
@@ -29,19 +38,24 @@ export default function ProfileScreen() {
       await updateProfile({ name, password: password || undefined });
       setPassword('');
       setConfirmPassword('');
-      Alert.alert('Thành công', 'Thông tin đã được cập nhật');
     } catch (error: any) {
-      Alert.alert('Lỗi', error.response?.data?.message || 'Không thể cập nhật thông tin');
+      // Handled by store
     } finally {
       setIsUpdating(false);
     }
   };
 
+  const { show: showAlert } = useAlertStore();
+
   const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng xuất', style: 'destructive', onPress: () => logout() }
-    ]);
+    showAlert(
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', variant: 'outline' },
+        { text: 'Đăng xuất', variant: 'primary', onPress: () => logout() }
+      ]
+    );
   };
 
   return (

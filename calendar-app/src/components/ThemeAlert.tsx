@@ -47,10 +47,7 @@ export const ThemeAlert: React.FC = () => {
                   if (btn.onPress) btn.onPress();
                   hide();
                 }}
-                style={[
-                  styles.button,
-                  index < buttons.length - 1 && styles.buttonMargin
-                ]}
+                style={styles.button}
               />
             ))}
           </View>
@@ -99,13 +96,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   buttonContainer: {
-    flexDirection: 'row',
     width: '100%',
+    flexDirection: 'column-reverse',
+    gap: 10, // Adjusted to be tighter but still distinct
   },
   button: {
-    flex: 1,
-  },
-  buttonMargin: {
-    marginRight: Spacing.sm,
+    width: '100%',
   },
 });

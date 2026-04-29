@@ -19,7 +19,9 @@ import { useAppointments, Appointment } from '../hooks/useAppointments';
 import { useAlertStore } from '../store/useAlertStore';
 
 export default function CalendarMonthScreen({ navigation }: any) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 

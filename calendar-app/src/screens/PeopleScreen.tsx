@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, FlatList, Alert, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { toast } from 'react-native-sonner';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getDB } from '../db/database';
 import { Phone, User, PlusCircle, UserCircle2 } from 'lucide-react-native';
@@ -27,7 +28,10 @@ export default function PeopleScreen({ navigation }: any) {
   };
 
   const handleAdd = async () => {
-    if (!name) return Alert.alert('Lỗi', 'Vui lòng nhập tên');
+    if (!name) {
+      toast.error('Vui lòng nhập tên');
+      return;
+    }
     try {
       const db = await getDB();
       await db.runAsync('INSERT INTO people (name, phone) VALUES (?, ?)', [String(name), String(phone)]);
@@ -36,7 +40,7 @@ export default function PeopleScreen({ navigation }: any) {
       loadPeople();
     } catch (e) {
       console.error('Database error in PeopleScreen:', e);
-      Alert.alert('Lỗi', 'Không thể thêm liên hệ');
+      toast.error('Không thể thêm liên hệ');
     }
   };
 

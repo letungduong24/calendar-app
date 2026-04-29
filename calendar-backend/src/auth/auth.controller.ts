@@ -8,9 +8,14 @@ import { RegisterDto } from './dto/register.dto';
 import { User } from '../users/user.entity';
 import type { Response } from 'express';
 
+import { UsersService } from '../users/users.service';
+
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
@@ -47,7 +52,12 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req: { user: { userId: number; email: string } }) {
+  async getProfile(@Request() req: { user: { userId: number; email: string } }) {
+    const user = await this.usersService.findOneById(req.user.userId);
+    if (user) {
+      const { password, ...result } = user;
+      return result;
+    }
     return req.user;
   }
 }

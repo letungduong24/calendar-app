@@ -70,7 +70,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.patch('/users/profile', data);
-      set({ user: response.data, isLoading: false });
+      await get().getMe(); // Fetch fresh user data to ensure sync
+      set({ isLoading: false });
       toast.success('Cập nhật thông tin thành công');
     } catch (error: any) {
       set({ isLoading: false });
