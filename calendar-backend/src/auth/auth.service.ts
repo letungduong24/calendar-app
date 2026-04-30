@@ -29,11 +29,7 @@ export class AuthService {
       throw new ConflictException('Email này đã được đăng ký');
     }
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const user = await this.usersService.create({
-      ...registerDto,
-      password: hashedPassword,
-    });
+    const user = await this.usersService.create(registerDto);
 
     return this.login(user);
   }
