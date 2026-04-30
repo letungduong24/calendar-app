@@ -12,29 +12,38 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
-  setToken: (token: string | null) => Promise<void>;
+  setTokens: (accessToken: string | null, refreshToken: string | null) => Promise<void>;
   setUser: (user: User | null) => void;
   updateProfile: (data: { name: string; password?: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   isLoading: true,
 
-  setToken: async (token: string | null) => {
-    if (token) {
-      await SecureStore.setItemAsync('userToken', token);
+  setTokens: async (accessToken: string | null, refreshToken: string | null) => {
+    if (accessToken) {
+      await SecureStore.setItemAsync('accessToken', accessToken);
     } else {
-      await SecureStore.deleteItemAsync('userToken');
+      await SecureStore.deleteItemAsync('accessToken');
     }
-    set({ token });
+    
+    if (refreshToken) {
+      await SecureStore.setItemAsync('refreshToken', refreshToken);
+    } else {
+      await SecureStore.deleteItemAsync('refreshToken');
+    }
+    
+    set({ accessToken, refreshToken });
   },
 
   setUser: (user: User | null) => {
@@ -45,8 +54,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.post('/auth/login', credentials);
-      const { access_token } = response.data;
-      await get().setToken(access_token);
+      const { access_token, refresh_token } = response.data;
+      await get().setTokens(access_token, refresh_token);
       await get().getMe();
       toast.success('Đăng nhập thành công');
     } catch (error: any) {
@@ -61,8 +70,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.post('/auth/register', data);
-      const { access_token } = response.data;
-      await get().setToken(access_token);
+      const { access_token, refresh_token } = response.data;
+      await get().setTokens(access_token, refresh_token);
       await get().getMe();
       toast.success('Đăng ký tài khoản thành công');
     } catch (error: any) {
@@ -89,22 +98,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await get().setToken(null);
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (e) {
+      console.warn('Logout API failed', e);
+    }
+    await get().setTokens(null, null);
     set({ user: null, isLoading: false });
   },
 
   getMe: async () => {
     try {
       set({ isLoading: true });
-      const storedToken = await SecureStore.getItemAsync('userToken');
-      if (storedToken) {
-        set({ token: storedToken });
+      const storedAccessToken = await SecureStore.getItemAsync('accessToken');
+      const storedRefreshToken = await SecureStore.getItemAsync('refreshToken');
+      
+      if (storedAccessToken) {
+        set({ accessToken: storedAccessToken, refreshToken: storedRefreshToken });
       }
+      
       const response = await apiClient.get('/auth/profile');
       set({ user: response.data, isLoading: false });
     } catch (error) {
       set({ user: null, isLoading: false });
-      await get().setToken(null);
+      await get().setTokens(null, null);
     }
   },
 }));

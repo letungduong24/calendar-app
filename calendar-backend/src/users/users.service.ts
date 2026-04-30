@@ -71,4 +71,32 @@ export class UsersService {
     }
     return user;
   }
+
+  async setCurrentRefreshToken(refreshToken: string, userId: number) {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.usersRepository.update(userId, {
+      refreshToken: hashedRefreshToken,
+    });
+  }
+
+  async getUserIfRefreshTokenMatches(refreshToken: string, userId: number) {
+    const user = await this.findOneById(userId);
+    if (!user || !user.refreshToken) return null;
+
+    const isRefreshTokenMatching = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+
+    if (isRefreshTokenMatching) {
+      return user;
+    }
+    return null;
+  }
+
+  async removeRefreshToken(userId: number) {
+    return this.usersRepository.update(userId, {
+      refreshToken: null as any,
+    });
+  }
 }

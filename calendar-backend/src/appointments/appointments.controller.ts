@@ -13,14 +13,14 @@ export class AppointmentsController {
     return this.appointmentsService.findAll(req.user, date);
   }
 
-  @Get(':id')
-  findOne(@Request() req, @Param('id') id: string) {
-    return this.appointmentsService.findOne(req.user, +id);
-  }
-
   @Get('counts')
   getCounts(@Request() req, @Query('month') month: string) {
     return this.appointmentsService.getMonthlyCounts(req.user, month);
+  }
+
+  @Get(':id')
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.appointmentsService.findOne(req.user, +id);
   }
 
   @Post()

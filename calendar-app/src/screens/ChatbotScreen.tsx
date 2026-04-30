@@ -31,7 +31,7 @@ import { scheduleAppointmentNotification, cancelNotification } from '../utils/no
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function ChatbotScreen() {
-  const token = useAuthStore(state => state.token);
+  const accessToken = useAuthStore(state => state.accessToken);
   const { show: showAlert } = useAlertStore();
   const queryClient = useQueryClient();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -42,7 +42,7 @@ export default function ChatbotScreen() {
     transport: new DefaultChatTransport({
       api: `${API_URL}/api/chat`,
       headers: {
-        Authorization: `Bearer ${token || ''}`,
+        Authorization: `Bearer ${accessToken || ''}`,
       },
       fetch: expoFetch as unknown as typeof globalThis.fetch,
     }),

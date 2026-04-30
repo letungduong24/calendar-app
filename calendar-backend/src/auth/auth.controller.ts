@@ -42,12 +42,16 @@ export class AuthController {
 
     if (redirectUrl) {
       // For mobile app deep linking
-      // Format: redirectUrl?token=ACCESS_TOKEN
-      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}token=${result.access_token}`;
+      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}token=${result.access_token}&refresh_token=${result.refresh_token}`;
       return res.redirect(urlWithToken);
     }
 
     return res.json(result);
+  }
+
+  @Post('refresh')
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -59,5 +63,12 @@ export class AuthController {
       return result;
     }
     return req.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Request() req: { user: { userId: number } }) {
+    await this.authService.logout(req.user.userId);
+    return { message: 'Đăng xuất thành công' };
   }
 }

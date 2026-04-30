@@ -22,6 +22,9 @@ export class User {
   @Column({ nullable: true })
   avatar?: string;
 
+  @Column({ nullable: true })
+  refreshToken?: string;
+
   @OneToMany(() => Person, (person) => person.user)
   people: Person[];
 
