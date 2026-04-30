@@ -15,8 +15,23 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<Partial<User> | null> {
+    console.log(`--- ĐANG KIỂM TRA ĐĂNG NHẬP CHO: ${email} ---`);
     const user = await this.usersService.findOneByEmail(email);
-    if (user && user.password && (await bcrypt.compare(pass, user.password))) {
+    
+    if (!user) {
+      console.log('=> KHÔNG TÌM THẤY USER');
+      return null;
+    }
+
+    if (!user.password) {
+      console.log('=> USER KHÔNG CÓ MẬT KHẨU (CÓ THỂ LÀ USER GOOGLE)');
+      return null;
+    }
+
+    const isMatch = await bcrypt.compare(pass, user.password);
+    console.log(`=> KẾT QUẢ SO SÁNH BCRYPT: ${isMatch}`);
+
+    if (isMatch) {
       const { password, ...result } = user;
       return result;
     }

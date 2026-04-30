@@ -39,10 +39,14 @@ export class AuthController {
   async googleAuthRedirect(@Request() req: { user: any; query: { state?: string } }, @Res() res: Response) {
     const result = await this.authService.googleLogin(req.user);
     const redirectUrl = req.query.state;
+    
+    console.log(`--- GOOGLE CALLBACK ---`);
+    console.log(`=> Redirect URL từ State: ${redirectUrl}`);
 
     if (redirectUrl) {
       // For mobile app deep linking - matching new store naming
       const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}accessToken=${result.access_token}&refreshToken=${result.refresh_token}`;
+      console.log(`=> Đang Redirect về: ${urlWithToken}`);
       return res.redirect(urlWithToken);
     }
 
