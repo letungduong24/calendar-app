@@ -19,7 +19,7 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
-  const setToken = useAuthStore((state) => state.setToken);
+  const setTokens = useAuthStore((state) => state.setTokens);
   const getMe = useAuthStore((state) => state.getMe);
 
   const handleLogin = async () => {
@@ -48,8 +48,11 @@ export default function LoginScreen({ navigation }: any) {
 
       if (result.type === 'success' && result.url) {
         const { queryParams } = Linking.parse(result.url);
-        if (queryParams?.token) {
-          await setToken(queryParams.token as string);
+        if (queryParams?.accessToken) {
+          await setTokens(
+            queryParams.accessToken as string, 
+            (queryParams.refreshToken as string) || null
+          );
           await getMe();
         }
       }

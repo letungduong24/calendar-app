@@ -41,8 +41,8 @@ export class AuthController {
     const redirectUrl = req.query.state;
 
     if (redirectUrl) {
-      // For mobile app deep linking
-      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}token=${result.access_token}&refresh_token=${result.refresh_token}`;
+      // For mobile app deep linking - matching new store naming
+      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}accessToken=${result.access_token}&refreshToken=${result.refresh_token}`;
       return res.redirect(urlWithToken);
     }
 
