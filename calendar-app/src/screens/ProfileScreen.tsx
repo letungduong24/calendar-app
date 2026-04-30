@@ -80,18 +80,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ThemeText variant="h2" style={styles.pageTitle}>Cá nhân</ThemeText>
-
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
-            <User size={60} color={Colors.textSecondary} />
-            <TouchableOpacity style={styles.editAvatarBtn}>
-              <Camera size={16} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
-          <ThemeText style={styles.userName}>{user?.name}</ThemeText>
-          <ThemeText color={Colors.textTertiary}>{user?.email}</ThemeText>
-        </View>
+        <View style={styles.headerSpacer} />
 
         <View style={styles.section}>
           <ThemeText style={styles.sectionLabel}>Cài đặt ứng dụng</ThemeText>
@@ -211,35 +200,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
-  pageTitle: { marginTop: Spacing.md, marginBottom: Spacing.xl },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: Spacing.xxl,
-  },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-    position: 'relative',
-  },
-  editAvatarBtn: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: Colors.background,
-  },
-  userName: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
+  headerSpacer: { height: Spacing.lg },
   section: { marginBottom: Spacing.xl },
   sectionLabel: {
     fontSize: 16,
