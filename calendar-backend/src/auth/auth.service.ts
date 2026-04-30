@@ -113,4 +113,34 @@ export class AuthService {
     }
     return this.login(dbUser);
   }
+
+  async googleLoginNative(idToken: string) {
+    const { OAuth2Client } = await import('google-auth-library');
+    const client = new OAuth2Client(this.configService.get('GOOGLE_CLIENT_ID'));
+
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: this.configService.get('GOOGLE_CLIENT_ID'),
+      });
+      const payload = ticket.getPayload();
+      
+      if (!payload) {
+        throw new UnauthorizedException('Token Google không hợp lệ');
+      }
+
+      const user = await this.usersService.findOrCreateGoogleUser({
+        googleId: payload.sub,
+        email: payload.email!,
+        firstName: payload.given_name || '',
+        lastName: payload.family_name || '',
+        picture: payload.picture || '',
+      });
+
+      return this.login(user);
+    } catch (error) {
+      console.error('Google Native Login Error:', error);
+      throw new UnauthorizedException('Xác thực Google thất bại');
+    }
+  }
 }

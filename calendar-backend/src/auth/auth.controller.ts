@@ -53,6 +53,11 @@ export class AuthController {
     return res.json(result);
   }
 
+  @Post('google/signin')
+  async googleSigninNative(@Body('idToken') idToken: string) {
+    return this.authService.googleLoginNative(idToken);
+  }
+
   @Post('refresh')
   async refresh(@Body('refresh_token') refreshToken: string) {
     return this.authService.refresh(refreshToken);

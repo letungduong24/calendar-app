@@ -8,10 +8,15 @@ import { Colors, Spacing, Typography, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';
 import { ThemeButton } from '../components/ThemeButton';
 import { useAuthStore } from '../store/useAuthStore';
+import apiClient from '../api/client';
 import { Mail, Lock } from 'lucide-react-native';
-import { BASE_URL } from '../api/client';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
-WebBrowser.maybeCompleteAuthSession();
+// Configure Google Sign-in
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID, // Ensure this is the WEB client ID
+  offlineAccess: true,
+});
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -41,23 +46,30 @@ export default function LoginScreen({ navigation }: any) {
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
-      const redirectUrl = Linking.createURL('auth-callback');
-      const authUrl = `${BASE_URL}/auth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
       
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-
-      if (result.type === 'success' && result.url) {
-        const { queryParams } = Linking.parse(result.url);
-        if (queryParams?.accessToken) {
-          await setTokens(
-            queryParams.accessToken as string, 
-            (queryParams.refreshToken as string) || null
-          );
-          await getMe();
-        }
+      // Use idToken to authenticate with our backend
+      if (userInfo.data?.idToken) {
+        const response = await apiClient.post('/auth/google/signin', {
+          idToken: userInfo.data.idToken,
+        });
+        
+        const { access_token, refresh_token } = response.data;
+        await setTokens(access_token, refresh_token);
+        await getMe();
       }
-    } catch (error) {
-      toast.error('Không thể đăng nhập bằng Google');
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        toast.error('Google Play Services không khả dụng');
+      } else {
+        toast.error('Không thể đăng nhập bằng Google');
+        console.error(error);
+      }
     } finally {
       setGoogleLoading(false);
     }

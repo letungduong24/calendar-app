@@ -2,7 +2,7 @@
   "expo": {
     "name": "calendar-app",
     "slug": "calendar-app",
-    "scheme": "calendar-app",
+    "scheme": "calendarapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,6 +29,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "@react-native-google-signin/google-signin",
       "expo-sqlite",
       "expo-web-browser"
     ]
