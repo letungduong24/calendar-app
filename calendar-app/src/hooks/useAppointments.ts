@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-native-sonner';
 import apiClient from '../api/client';
 import { Person } from './usePeople';
+import { scheduleAppointmentNotification, cancelAllNotificationsForAppointment } from '../utils/notifications';
 
 export interface Appointment {
   id: number;
@@ -32,9 +33,12 @@ export const useAppointments = (date?: string) => {
       const response = await apiClient.post<Appointment>('/appointments', newAppointment);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast.success('Đã thêm lịch hẹn thành công');
+      
+      // Always schedule notifications (reminder + on-time)
+      scheduleAppointmentNotification(data.id, data.title, data.date, data.time, data.reminder ?? 720);
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Không thể thêm lịch hẹn';
@@ -47,9 +51,12 @@ export const useAppointments = (date?: string) => {
       const response = await apiClient.put<Appointment>(`/appointments/${id}`, data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast.success('Đã cập nhật lịch hẹn');
+
+      // Re-schedule both notifications
+      scheduleAppointmentNotification(data.id, data.title, data.date, data.time, data.reminder ?? 720);
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Không thể cập nhật lịch hẹn';
@@ -61,9 +68,10 @@ export const useAppointments = (date?: string) => {
     mutationFn: async (id: number) => {
       await apiClient.delete(`/appointments/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast.success('Đã xóa lịch hẹn');
+      cancelAllNotificationsForAppointment(id);
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Không thể xóa lịch hẹn';
@@ -79,4 +87,14 @@ export const useAppointments = (date?: string) => {
     updateAppointment: updateAppointmentMutation.mutateAsync,
     deleteAppointment: deleteAppointmentMutation.mutateAsync,
   };
+};
+
+export const useMonthlyCounts = (month: string) => {
+  return useQuery({
+    queryKey: ['appointments', 'counts', month],
+    queryFn: async () => {
+      const response = await apiClient.get<Record<string, number>>(`/appointments/counts?month=${month}`);
+      return response.data;
+    },
+  });
 };

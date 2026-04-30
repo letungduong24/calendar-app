@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Calendar, PlusCircle, Trash2, User } from 'lucide-react-native';
 import { ThemeText } from './ThemeText';
+import { ThemeButton } from './ThemeButton';
 import { Colors, Spacing, BorderRadius } from '../theme/Theme';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import AppointmentCard from './AppointmentCard';
@@ -102,12 +103,52 @@ export function GetAppointmentsResult({ part }: { part: any }) {
 }
 
 // ── tool-createAppointment ────────────────────────────────────────────────────
-export function CreateAppointmentResult({ part }: { part: any }) {
+export function CreateAppointmentResult({ 
+  part, 
+  onResolveConflict 
+}: { 
+  part: any; 
+  onResolveConflict?: (action: 'replace' | 'ignore', conflictingId: number, title: string) => void;
+}) {
   if (part.state === 'input-streaming' || part.state === 'input-available') {
     return <LoadingRow label="Đang tạo lịch hẹn..." />;
   }
   if (part.state === 'output-available') {
-    const output = part.output as { success: boolean; appointment?: any; message?: string } | undefined;
+    const output = part.output as { success: boolean; appointment?: any; message?: string; errorType?: string; conflictingAppointment?: any } | undefined;
+    
+    if (output?.errorType === 'CONFLICT') {
+      return (
+        <View style={[styles.toolCard, styles.toolCardError]}>
+          <SectionHeader icon={Calendar} title="Lịch hẹn bị trùng" color={Colors.error} />
+          <ThemeText style={styles.errorText}>{output.message}</ThemeText>
+          {output.conflictingAppointment && (
+            <View style={{ marginTop: Spacing.sm }}>
+              <ThemeText variant="small" color={Colors.textSecondary} style={{ marginBottom: 4, fontWeight: '800' }}>
+                LỊCH HIỆN TẠI:
+              </ThemeText>
+              <TappableAppointmentCard item={output.conflictingAppointment} />
+              
+              <View style={styles.conflictActions}>
+                <ThemeButton 
+                  title="Thay thế lịch cũ" 
+                  size="sm"
+                  onPress={() => onResolveConflict?.('replace', output.conflictingAppointment.id, output.conflictingAppointment.title)}
+                  style={{ flex: 1 }}
+                />
+                <ThemeButton 
+                  title="Bỏ qua" 
+                  variant="outline" 
+                  size="sm"
+                  onPress={() => onResolveConflict?.('ignore', output.conflictingAppointment.id, output.conflictingAppointment.title)}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          )}
+        </View>
+      );
+    }
+
     if (!output?.success) {
       return (
         <View style={[styles.toolCard, styles.toolCardError]}>
@@ -131,14 +172,42 @@ export function DeleteAppointmentResult({ part }: { part: any }) {
     return <LoadingRow label="Đang xóa lịch hẹn..." />;
   }
   if (part.state === 'output-available') {
-    const success = (part.output as any)?.success ?? false;
+    const output = part.output as { success: boolean; title?: string; message?: string } | undefined;
+    const success = output?.success ?? false;
     return (
       <View style={[styles.toolCard, success ? styles.toolCardSuccess : styles.toolCardError]}>
         <SectionHeader
           icon={Trash2}
-          title={success ? 'Đã xóa lịch hẹn' : 'Không thể xóa lịch hẹn'}
+          title={success ? `Đã xóa: ${output?.title || 'Lịch hẹn'}` : 'Không thể xóa lịch hẹn'}
           color={success ? '#4CAF50' : Colors.error}
         />
+        {!success && output?.message && (
+          <ThemeText style={styles.errorText}>{output.message}</ThemeText>
+        )}
+      </View>
+    );
+  }
+  return null;
+}
+
+// ── tool-deleteMultipleAppointments ───────────────────────────────────────────
+export function DeleteMultipleAppointmentsResult({ part }: { part: any }) {
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <LoadingRow label="Đang xóa các lịch hẹn..." />;
+  }
+  if (part.state === 'output-available') {
+    const output = part.output as { success: boolean; count?: number; message?: string } | undefined;
+    const success = output?.success ?? false;
+    return (
+      <View style={[styles.toolCard, success ? styles.toolCardSuccess : styles.toolCardError]}>
+        <SectionHeader
+          icon={Trash2}
+          title={success ? `Đã xóa ${output?.count} lịch hẹn` : 'Không thể xóa các lịch hẹn'}
+          color={success ? '#4CAF50' : Colors.error}
+        />
+        {output?.message && (
+          <ThemeText style={styles.errorText}>{output.message}</ThemeText>
+        )}
       </View>
     );
   }
@@ -309,5 +378,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontStyle: 'italic',
     marginTop: Spacing.xs,
+  },
+  conflictActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: Spacing.md,
   },
 });

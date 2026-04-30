@@ -9,6 +9,10 @@ import { ThemeText } from '../components/ThemeText';
 import { ThemeButton } from '../components/ThemeButton';
 import { usePeople } from '../hooks/usePeople';
 import { useAppointments, Appointment } from '../hooks/useAppointments';
+import { useAlertStore } from '../store/useAlertStore';
+import AppointmentCard from '../components/AppointmentCard';
+import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
+import apiClient from '../api/client';
 
 const REMINDER_OPTIONS = [
   { label: 'Không', value: 0 },
@@ -16,12 +20,34 @@ const REMINDER_OPTIONS = [
   { label: '10 phút', value: 10 },
   { label: '30 phút', value: 30 },
   { label: '1 giờ', value: 60 },
+  { label: '12 tiếng', value: 720 },
+  { label: '1 ngày', value: 1440 },
+  { label: '1 tuần', value: 10080 },
 ];
 
 export default function AddEventScreen({ navigation, route }: any) {
-  const editAppointment: Appointment | undefined = route.params?.appointment;
+  const [editAppointment, setEditAppointment] = useState<Appointment | undefined>(route.params?.appointment);
+  const appointmentId = route.params?.appointmentId;
   const initialDateStr = route.params?.initialDate;
   const isEditing = !!editAppointment;
+  const [isLoadingAppt, setIsLoadingAppt] = useState(!!appointmentId && !editAppointment);
+
+  useEffect(() => {
+    if (appointmentId && !editAppointment) {
+      const fetchAppt = async () => {
+        try {
+          const res = await apiClient.get(`/appointments/${appointmentId}`);
+          setEditAppointment(res.data);
+        } catch (e) {
+          toast.error('Không tìm thấy lịch hẹn');
+          navigation.goBack();
+        } finally {
+          setIsLoadingAppt(false);
+        }
+      };
+      fetchAppt();
+    }
+  }, [appointmentId]);
 
   const parseTime = (timeStr: string) => {
     if (!timeStr) return new Date();
@@ -31,39 +57,50 @@ export default function AddEventScreen({ navigation, route }: any) {
     return d;
   };
 
-  const [title, setTitle] = useState(editAppointment?.title || '');
-  const [description, setDescription] = useState(editAppointment?.description || '');
-  const [location, setLocation] = useState(editAppointment?.location || '');
-  const [dateObj, setDateObj] = useState(
-    editAppointment?.date ? new Date(editAppointment.date) : 
-    (initialDateStr ? new Date(initialDateStr) : new Date())
-  );
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  
-  const [timeObj, setTimeObj] = useState(
-    isEditing ? parseTime(editAppointment!.time) : new Date()
-  );
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  
-  const [hasEndTime, setHasEndTime] = useState(isEditing ? !!editAppointment?.endTime : true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [dateObj, setDateObj] = useState(new Date());
+  const [timeObj, setTimeObj] = useState(new Date());
   const [endTimeObj, setEndTimeObj] = useState(() => {
-    if (isEditing && editAppointment?.endTime) return parseTime(editAppointment.endTime);
     let t = new Date();
     t.setHours(t.getHours() + 1);
     return t;
   });
+  const [reminder, setReminder] = useState(720);
+  const [selectedPeopleIds, setSelectedPeopleIds] = useState<number[]>([]);
+  const [hasEndTime, setHasEndTime] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-
-  const [reminder, setReminder] = useState(editAppointment?.reminder || 0);
-  const [selectedPeopleIds, setSelectedPeopleIds] = useState<number[]>(
-    editAppointment?.attendees?.map(p => p.id) || []
-  );
   const [quickFriendName, setQuickFriendName] = useState('');
   const [isAddingQuickFriend, setIsAddingQuickFriend] = useState(false);
 
+  // Sync state when editAppointment changes (e.g. after fetch)
+  useEffect(() => {
+    if (editAppointment) {
+      setTitle(editAppointment.title || '');
+      setDescription(editAppointment.description || '');
+      setLocation(editAppointment.location || '');
+      setDateObj(editAppointment.date ? new Date(editAppointment.date) : new Date());
+      setTimeObj(parseTime(editAppointment.time));
+      if (editAppointment.endTime) {
+        setEndTimeObj(parseTime(editAppointment.endTime));
+        setHasEndTime(true);
+      }
+      setReminder(editAppointment.reminder ?? 720);
+      setSelectedPeopleIds(editAppointment.attendees?.map(p => p.id) || []);
+    } else if (initialDateStr) {
+      setDateObj(new Date(initialDateStr));
+    }
+  }, [editAppointment, initialDateStr]);
+
   const { people, createPerson } = usePeople();
-  const { createAppointment, updateAppointment } = useAppointments();
+  const { createAppointment, updateAppointment, deleteAppointment } = useAppointments();
+  const { show: showAlert } = useAlertStore();
   const [saving, setSaving] = useState(false);
+  const [conflict, setConflict] = useState<any>(null);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
 
   const handleQuickAddFriend = async () => {
     if (!quickFriendName.trim()) return;
@@ -115,9 +152,28 @@ export default function AddEventScreen({ navigation, route }: any) {
       }
       
       navigation.goBack();
-    } catch (e) {
-      // Handled by store
+    } catch (e: any) {
+      if (e.response?.status === 409) {
+        setConflict(e.response.data.conflictingAppointment);
+        setSaving(false);
+        // We still show toast or alert if needed, but the UI will show the card now
+        toast.error('Phát hiện trùng lịch hẹn');
+      }
     } finally {
+      if (!conflict) setSaving(false);
+    }
+  };
+
+  const handleResolveConflict = async () => {
+    if (!conflict) return;
+    try {
+      setSaving(true);
+      await deleteAppointment(conflict.id);
+      setConflict(null);
+      // Retry save
+      handleSave();
+    } catch (err) {
+      toast.error('Không thể xử lý lịch cũ');
       setSaving(false);
     }
   };
@@ -333,6 +389,35 @@ export default function AddEventScreen({ navigation, route }: any) {
             </ScrollView>
           </View>
 
+          {conflict && (
+            <View style={styles.conflictBox}>
+              <ThemeText variant="small" color={Colors.error} style={[styles.label, { fontWeight: '800' }]}>TRÙNG LỊCH HẸN</ThemeText>
+              <AppointmentCard 
+                appointment={{
+                  ...conflict,
+                  attendees: conflict.attendees || []
+                }} 
+                variant="compact"
+                onPress={() => setIsDetailVisible(true)}
+              />
+              <View style={styles.conflictActions}>
+                <ThemeButton 
+                  title="Xóa lịch cũ & Lưu mới" 
+                  onPress={handleResolveConflict}
+                  disabled={saving}
+                  style={{ flex: 1.5 }}
+                />
+                <ThemeButton 
+                  title="Bỏ qua" 
+                  variant="outline" 
+                  onPress={() => setConflict(null)}
+                  disabled={saving}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          )}
+
           <View style={styles.footer}>
             <ThemeButton 
               title={isEditing ? "Cập nhật" : "Lưu"} 
@@ -342,6 +427,17 @@ export default function AddEventScreen({ navigation, route }: any) {
               {saving && <ActivityIndicator color={Colors.white} />}
             </ThemeButton>
           </View>
+          
+          {conflict && (
+            <AppointmentDetailModal
+              isVisible={isDetailVisible}
+              appointment={{
+                ...conflict,
+                attendees: conflict.attendees || []
+              }}
+              onClose={() => setIsDetailVisible(false)}
+            />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -367,4 +463,17 @@ const styles = StyleSheet.create({
   personPill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: Colors.white, marginRight: 10, borderWidth: 1, borderColor: Colors.secondary },
   personPillSelected: { backgroundColor: Colors.black, borderColor: Colors.black },
   footer: { marginTop: Spacing.xl },
+  conflictBox: {
+    marginTop: Spacing.xl,
+    padding: Spacing.lg,
+    backgroundColor: 'rgba(244, 67, 54, 0.05)',
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 67, 54, 0.2)',
+  },
+  conflictActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: Spacing.md,
+  },
 });

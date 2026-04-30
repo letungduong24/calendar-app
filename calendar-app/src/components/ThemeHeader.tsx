@@ -7,7 +7,7 @@ import { Colors, Spacing, BorderRadius } from '../theme/Theme';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HORIZONTAL_PADDING = Spacing.lg;
 const TAB_BAR_WIDTH = SCREEN_WIDTH - (HORIZONTAL_PADDING * 2);
-const TAB_WIDTH = TAB_BAR_WIDTH / 5;
+const TAB_WIDTH = TAB_BAR_WIDTH / 4;
 
 export const ThemeHeader = ({ state, descriptors, navigation, position }: any) => {
   const insets = useSafeAreaInsets();
@@ -16,8 +16,8 @@ export const ThemeHeader = ({ state, descriptors, navigation, position }: any) =
 
   // Animation for the active pill background
   const translateX = position.interpolate({
-    inputRange: [0, 1, 2, 3, 4],
-    outputRange: [0, TAB_WIDTH, TAB_WIDTH * 2, TAB_WIDTH * 3, TAB_WIDTH * 4],
+    inputRange: [0, 1, 2, 3],
+    outputRange: [0, TAB_WIDTH, TAB_WIDTH * 2, TAB_WIDTH * 3],
     extrapolate: 'clamp',
   });
 
@@ -25,7 +25,6 @@ export const ThemeHeader = ({ state, descriptors, navigation, position }: any) =
     { name: 'Calendar', Icon: Home },
     { name: 'MonthCalendar', Icon: Calendar },
     { name: 'Chatbot', Icon: MessageSquare },
-    { name: 'Settings', Icon: Settings },
     { name: 'Profile', Icon: User },
   ];
 

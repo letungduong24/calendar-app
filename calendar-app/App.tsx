@@ -15,9 +15,25 @@ import { useAuthStore } from './src/store/useAuthStore';
 // Create a client
 const queryClient = new QueryClient();
 
+import * as Notifications from 'expo-notifications';
+import { navigate } from './src/navigation/navigationUtils';
+
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   const getMe = useAuthStore((state) => state.getMe);
+
+  useEffect(() => {
+    // Listener for when user clicks a notification
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const appointmentId = response.notification.request.content.data.appointmentId;
+      console.log('Notification clicked, appointmentId:', appointmentId);
+      if (appointmentId) {
+        navigate('AppointmentDetail', { appointmentId });
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     async function setup() {

@@ -13,6 +13,16 @@ export class AppointmentsController {
     return this.appointmentsService.findAll(req.user, date);
   }
 
+  @Get(':id')
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.appointmentsService.findOne(req.user, +id);
+  }
+
+  @Get('counts')
+  getCounts(@Request() req, @Query('month') month: string) {
+    return this.appointmentsService.getMonthlyCounts(req.user, month);
+  }
+
   @Post()
   create(@Request() req, @Body() createAppointmentDto: CreateAppointmentDto) {
     return this.appointmentsService.create(req.user, createAppointmentDto);
@@ -26,5 +36,10 @@ export class AppointmentsController {
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
     return this.appointmentsService.remove(req.user, +id);
+  }
+
+  @Post('batch-delete')
+  removeBatch(@Request() req, @Body('ids') ids: number[]) {
+    return this.appointmentsService.removeBatch(req.user, ids);
   }
 }

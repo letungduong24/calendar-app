@@ -11,6 +11,7 @@ import CalendarMonthScreen from '../screens/CalendarMonthScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ChatbotScreen from '../screens/ChatbotScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { ThemeHeader } from '../components/ThemeHeader';
 import { Colors } from '../theme/Theme';
@@ -37,17 +38,18 @@ function MainTabs() {
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="MonthCalendar" component={CalendarMonthScreen} />
       <Tab.Screen name="Chatbot" component={ChatbotScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
+import { navigationRef } from './navigationUtils';
+
 export default function AppNavigator() {
   const user = useAuthStore((state) => state.user);
 
   return (
-    <NavigationContainer theme={AppTheme}>
+    <NavigationContainer theme={AppTheme} ref={navigationRef}>
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
@@ -65,6 +67,14 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="AddEvent" 
               component={AddEventScreen} 
+              options={{ 
+                presentation: 'modal',
+                animation: 'slide_from_bottom' 
+              }} 
+            />
+            <Stack.Screen 
+              name="AppointmentDetail" 
+              component={AppointmentDetailScreen} 
               options={{ 
                 presentation: 'modal',
                 animation: 'slide_from_bottom' 

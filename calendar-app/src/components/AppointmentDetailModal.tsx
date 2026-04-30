@@ -71,7 +71,21 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   const getReminderLabel = (minutes: number) => {
     if (!minutes || minutes === 0) return 'Không nhắc';
     if (minutes < 60) return `Trước ${minutes} phút`;
-    return `Trước 1 giờ`;
+    
+    // Specially handle 12 hours as requested
+    if (minutes === 720) return 'Trước 12 tiếng';
+    
+    // Check if it's exactly one or more days
+    if (minutes % 1440 === 0) {
+      return `Trước ${minutes / 1440} ngày`;
+    }
+    
+    // Check if it's exactly one or more hours
+    if (minutes % 60 === 0) {
+      return `Trước ${minutes / 60} tiếng`;
+    }
+    
+    return `Trước ${minutes} phút`;
   };
 
   if (!shouldRender && !isVisible) return null;

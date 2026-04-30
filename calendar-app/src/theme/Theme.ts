@@ -19,6 +19,7 @@ export const Colors = {
   black: '#000000',
   placeholder: '#A8A8A8',
   error: '#FF3B30',
+  border: '#DCDCD8',
   
   // Design System Color Pairs
   cards: [

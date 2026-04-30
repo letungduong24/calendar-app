@@ -23,8 +23,10 @@ import {
   GetAppointmentsResult,
   CreateAppointmentResult,
   DeleteAppointmentResult,
+  DeleteMultipleAppointmentsResult,
   ResolveAttendeesResult,
 } from '../components/ChatToolResults';
+import { scheduleAppointmentNotification, cancelNotification } from '../utils/notifications';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -62,6 +64,25 @@ export default function ChatbotScreen() {
       if (hasToolResults) {
         queryClient.invalidateQueries({ queryKey: ['appointments'] });
         queryClient.invalidateQueries({ queryKey: ['people'] });
+
+        // Handle notifications for AI-generated actions
+        lastAssistantMessage?.parts?.forEach((p: any) => {
+          if (p.type === 'tool-createAppointment' && p.state === 'output-available' && p.output?.success) {
+            const appt = p.output.appointment;
+            if (appt.reminder > 0) {
+              scheduleAppointmentNotification(appt.id, appt.title, appt.date, appt.time, appt.reminder);
+            }
+          }
+          if (p.type === 'tool-deleteAppointment' && p.state === 'output-available' && p.output?.success) {
+            // Need ID from input since output doesn't have it
+            const apptId = p.args?.id;
+            if (apptId) cancelNotification(apptId.toString());
+          }
+          if (p.type === 'tool-deleteMultipleAppointments' && p.state === 'output-available' && p.output?.success) {
+            const ids = p.args?.ids ?? [];
+            ids.forEach((id: number) => cancelNotification(id.toString()));
+          }
+        });
       }
     }
   }, [status, messages, queryClient]);
@@ -90,22 +111,6 @@ export default function ChatbotScreen() {
     // No-op without history
   };
 
-  const handleClearHistory = () => {
-    showAlert(
-      'Xóa lịch sử chat',
-      'Toàn bộ lịch sử trò chuyện sẽ bị xóa vĩnh viễn. Bạn chắc chắn không?',
-      [
-        { text: 'Hủy', variant: 'outline' },
-        {
-          text: 'Xóa',
-          variant: 'primary',
-          onPress: () => {
-            setMessages([]);
-          },
-        },
-      ],
-    );
-  };
 
   const handleSend = () => {
     if (input.trim() && !isLoading) {
@@ -114,20 +119,28 @@ export default function ChatbotScreen() {
     }
   };
 
+  const handleResolveConflict = (action: 'replace' | 'ignore', conflictingId: number, title: string) => {
+    if (action === 'replace') {
+      sendMessage({ text: `Thay thế lịch cũ "${title}" (ID: ${conflictingId}) bằng lịch mới này giúp tôi.` });
+    } else {
+      sendMessage({ text: `Tôi đã hiểu, hãy giữ nguyên lịch cũ "${title}" và không tạo lịch mới này nữa.` });
+    }
+  };
+
   // Render từng part theo đúng type — giống train-booking switch pattern
   const renderPart = (part: any, index: number, m: any) => {
+    // Inject args into part for easier access in results
+    const enhancedPart = { ...part, args: m.toolCalls?.find((tc: any) => tc.toolCallId === (part.toolCallId || part.id))?.args };
+    
     switch (part.type) {
       case 'text': {
         if (!part.text?.trim()) return null;
-        // AI text: ẩn hoàn toàn nếu message có bất kỳ tool part nào
-        // (dù đang streaming hay đã có kết quả) → luôn dùng component UI
+        // Ẩn text nếu message có bất kỳ tool part nào (dù đang gọi hay đã có kết quả)
         if (m.role === 'assistant') {
-          const hasValidToolResult = m.parts?.some((p: any) =>
-            ['tool-getAppointments', 'tool-createAppointment', 'tool-deleteAppointment', 'tool-resolveAttendees'].includes(p.type) &&
-            (p.output !== undefined || p.result !== undefined || p.state === 'input-streaming' || p.state === 'input-available')
+          const hasAnyTool = m.parts?.some((p: any) =>
+            p.type?.startsWith('tool-')
           );
-          // Chỉ ẩn text nếu có ít nhất 1 tool có kết quả hoặc đang chạy
-          if (hasValidToolResult) return null;
+          if (hasAnyTool) return null;
         }
         return (
           <ThemeText key={index} style={[
@@ -141,20 +154,22 @@ export default function ChatbotScreen() {
       case 'tool-getAppointments':
       case 'tool-createAppointment':
       case 'tool-deleteAppointment':
+      case 'tool-deleteMultipleAppointments':
       case 'tool-resolveAttendees': {
-        const hasData = part.output !== undefined || part.result !== undefined;
-        const isInteracting = part.state === 'input-streaming' || part.state === 'input-available' || part.state === 'call';
+        const hasData = enhancedPart.output !== undefined || enhancedPart.result !== undefined;
+        const isInteracting = enhancedPart.state === 'input-streaming' || enhancedPart.state === 'input-available' || enhancedPart.state === 'call';
         
         // Nếu không có dữ liệu và cũng không phải đang chạy -> không render component lỗi
         if (!hasData && !isInteracting) return null;
         
         // Cần đảm bảo component nhận được data đúng field
-        const enhancedPart = { ...part, output: part.output ?? part.result };
+        const finalPart = { ...enhancedPart, output: enhancedPart.output ?? enhancedPart.result };
 
-        if (part.type === 'tool-getAppointments') return <GetAppointmentsResult key={index} part={enhancedPart} />;
-        if (part.type === 'tool-createAppointment') return <CreateAppointmentResult key={index} part={enhancedPart} />;
-        if (part.type === 'tool-deleteAppointment') return <DeleteAppointmentResult key={index} part={enhancedPart} />;
-        if (part.type === 'tool-resolveAttendees') return <ResolveAttendeesResult key={index} part={enhancedPart} />;
+        if (part.type === 'tool-getAppointments') return <GetAppointmentsResult key={index} part={finalPart} />;
+        if (part.type === 'tool-createAppointment') return <CreateAppointmentResult key={index} part={finalPart} onResolveConflict={handleResolveConflict} />;
+        if (part.type === 'tool-deleteAppointment') return <DeleteAppointmentResult key={index} part={finalPart} />;
+        if (part.type === 'tool-deleteMultipleAppointments') return <DeleteMultipleAppointmentsResult key={index} part={finalPart} />;
+        if (part.type === 'tool-resolveAttendees') return <ResolveAttendeesResult key={index} part={finalPart} />;
         return null;
       }
       default:
@@ -168,15 +183,7 @@ export default function ChatbotScreen() {
         <View style={styles.header}>
           <View>
             <ThemeText style={styles.headerTitle}>Trợ lý AI</ThemeText>
-            <ThemeText style={styles.headerSub}>Luôn sẵn sàng hỗ trợ</ThemeText>
           </View>
-          <TouchableOpacity
-            style={styles.clearBtn}
-            onPress={handleClearHistory}
-            disabled={isLoading || messages.length === 0}
-          >
-            <Trash2 size={18} color={messages.length === 0 ? Colors.textTertiary : Colors.textSecondary} />
-          </TouchableOpacity>
         </View>
 
         <ScrollView 
@@ -202,27 +209,38 @@ export default function ChatbotScreen() {
 
           {messages.map((m) => {
             const isUser = m.role === 'user';
-            return (m.parts ?? []).map((part: any, i: number) => {
-              if (part.type === 'text') {
-                const rendered = renderPart(part, i, m);
-                if (!rendered) return null;
-                return (
-                  <View key={`${m.id}-${i}`} style={isUser ? styles.userWrapper : styles.aiWrapper}>
-                    <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.aiBubble]}>
-                      {rendered}
+            
+            // Group consecutive tool parts to show them in a single card-like container if possible
+            // or just ensure they are close together.
+            // For now, let's group all tool parts of a single message into one toolWrapper area
+            const toolParts = (m.parts ?? []).filter((p: any) => p.type !== 'text');
+            const textParts = (m.parts ?? []).filter((p: any) => p.type === 'text');
+
+            return (
+              <View key={m.id}>
+                {textParts.map((part: any, i: number) => {
+                  const rendered = renderPart(part, i, m);
+                  if (!rendered) return null;
+                  return (
+                    <View key={`${m.id}-text-${i}`} style={isUser ? styles.userWrapper : styles.aiWrapper}>
+                      <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.aiBubble]}>
+                        {rendered}
+                      </View>
                     </View>
+                  );
+                })}
+                
+                {toolParts.length > 0 && (
+                  <View style={styles.toolWrapper}>
+                    {toolParts.map((part: any, i: number) => (
+                      <View key={`${m.id}-tool-${i}`} style={styles.toolResultItem}>
+                        {renderPart(part, i, m)}
+                      </View>
+                    ))}
                   </View>
-                );
-              }
-              // Tool parts — full width, không bị giới hạn maxWidth
-              const rendered = renderPart(part, i, m);
-              if (!rendered) return null;
-              return (
-                <View key={`${m.id}-${i}`} style={styles.toolWrapper}>
-                  {rendered}
-                </View>
-              );
-            });
+                )}
+              </View>
+            );
           })}
 
           {isLoading && (() => {
@@ -233,6 +251,7 @@ export default function ChatbotScreen() {
                   'tool-getAppointments', 
                   'tool-createAppointment', 
                   'tool-deleteAppointment', 
+                  'tool-deleteMultipleAppointments',
                   'tool-searchContacts'
                 ].includes(p.type) && p.state === 'output-available'
             );
@@ -266,11 +285,12 @@ export default function ChatbotScreen() {
           keyboardShouldPersistTaps="handled"
         >
             {[
-              'Hôm nay có lịch gì?',
-              'Tạo lịch họp',
-              'Lịch tuần tới',
-              'Tạo lịch với bạn',
-              'Xóa lịch hẹn',
+              'Tạo lịch',
+              'Lịch hôm nay',
+              'Lịch tuần này',
+              'Lịch tuần trước',
+              'Lịch tháng này',
+              'Thứ 6 tới có lịch gì?',
             ].map((text) => (
               <TouchableOpacity
                 key={text}
@@ -337,6 +357,9 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.lg,
+  },
+  toolResultItem: {
+    marginBottom: Spacing.sm,
   },
   messageBubble: {
     paddingHorizontal: Spacing.md,
@@ -462,6 +485,7 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     gap: Spacing.xs,
   },
   chip: {

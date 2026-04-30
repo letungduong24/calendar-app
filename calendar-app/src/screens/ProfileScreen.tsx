@@ -1,15 +1,33 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, Switch } from 'react-native';
 import { toast } from 'react-native-sonner';
 import { useAlertStore } from '../store/useAlertStore';
-import { User, Mail, Lock, LogOut, Camera } from 'lucide-react-native';
+import { User, Mail, Lock, LogOut, Camera, Bell, Moon, Info, ChevronRight, Shield } from 'lucide-react-native';
 import { Colors, Spacing, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';
 import { ThemeButton } from '../components/ThemeButton';
+import { sendTestNotification } from '../utils/notifications';
 import { useAuthStore } from '../store/useAuthStore';
+import { useSettingsStore } from '../store/useSettingsStore';
+import * as Notifications from 'expo-notifications';
+import { rescheduleAllNotifications } from '../utils/notifications';
 
 export default function ProfileScreen() {
   const { user, logout, updateProfile } = useAuthStore();
+  const { notificationsEnabled, setNotificationsEnabled } = useSettingsStore();
+  
+  const handleToggleNotifications = async (value: boolean) => {
+    setNotificationsEnabled(value);
+    if (!value) {
+      // If turned off, cancel ALL scheduled notifications immediately
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      toast.info('Đã tắt và hủy tất cả thông báo');
+    } else {
+      // If turned back on, reschedule all future appointments
+      await rescheduleAllNotifications();
+      toast.success('Đã bật và lên lịch lại tất cả thông báo');
+    }
+  };
   const [name, setName] = useState(user?.name || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,6 +56,7 @@ export default function ProfileScreen() {
       await updateProfile({ name, password: password || undefined });
       setPassword('');
       setConfirmPassword('');
+      toast.success('Cập nhật thông tin thành công');
     } catch (error: any) {
       // Handled by store
     } finally {
@@ -72,6 +91,39 @@ export default function ProfileScreen() {
           </View>
           <ThemeText style={styles.userName}>{user?.name}</ThemeText>
           <ThemeText color={Colors.textTertiary}>{user?.email}</ThemeText>
+        </View>
+
+        <View style={styles.section}>
+          <ThemeText style={styles.sectionLabel}>Cài đặt ứng dụng</ThemeText>
+          <View style={styles.settingsCard}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconBox, { backgroundColor: '#E5F1FF' }]}>
+                  <Bell size={20} color={Colors.primary} />
+                </View>
+                <ThemeText style={styles.settingTitle}>Thông báo đẩy</ThemeText>
+              </View>
+              <Switch 
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: '#D1D1D6', true: Colors.primary }}
+                thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.settingRow, { borderBottomWidth: 0 }]}
+              onPress={sendTestNotification}
+            >
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconBox, { backgroundColor: '#F2F2F7' }]}>
+                  <Info size={20} color={Colors.textSecondary} />
+                </View>
+                <ThemeText style={styles.settingTitle}>Kiểm tra thông báo</ThemeText>
+              </View>
+              <ThemeText color={Colors.primary}>Gửi thử</ThemeText>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -138,14 +190,14 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
-        </View>
 
-        <ThemeButton 
-          title="Cập nhật thông tin" 
-          onPress={handleUpdateProfile}
-          loading={isUpdating}
-          style={styles.updateBtn}
-        />
+          <ThemeButton 
+            title="Cập nhật thông tin" 
+            onPress={handleUpdateProfile}
+            loading={isUpdating}
+            style={styles.updateBtn}
+          />
+        </View>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <LogOut size={20} color="#FF3B30" />
@@ -209,12 +261,42 @@ const styles = StyleSheet.create({
   disabledInput: { backgroundColor: '#F2F2F7', opacity: 0.8 },
   inputIcon: { marginRight: Spacing.sm },
   input: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.text },
-  updateBtn: { marginTop: Spacing.md },
+  updateBtn: { marginTop: Spacing.sm },
+  settingsCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.xxl,
+    marginTop: Spacing.xl,
     paddingVertical: Spacing.md,
   },
   logoutText: {

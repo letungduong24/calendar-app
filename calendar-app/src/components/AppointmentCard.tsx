@@ -18,6 +18,12 @@ export default function AppointmentCard({ appointment, variant = 'default', onPr
   const bgColor = colorPair.bg;
   const textColor = colorPair.text;
   
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    return `${days[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}`;
+  };
+
   const displayTime = endTime ? `${time} - ${endTime}` : time;
   const hasAttendees = attendees && attendees.length > 0;
   const isCompact = variant === 'compact';
@@ -33,14 +39,23 @@ export default function AppointmentCard({ appointment, variant = 'default', onPr
       ]}
     >
       <View style={styles.topRow}>
-        <ThemeText 
-          variant={isCompact ? 'title' : 'h3'} 
-          numberOfLines={isCompact ? 1 : 2} 
-          color={textColor}
-          style={{ flex: 1, fontWeight: '800' }}
-        >
-          {title}
-        </ThemeText>
+        <View style={{ flex: 1 }}>
+          <ThemeText 
+            variant="caption" 
+            color={textColor} 
+            style={{ opacity: 0.8, marginBottom: isCompact ? 0 : 4, fontSize: isCompact ? 10 : 12 }}
+          >
+            {formatDate(appointment.date)}
+          </ThemeText>
+          <ThemeText 
+            variant={isCompact ? 'title' : 'h3'} 
+            numberOfLines={isCompact ? 1 : 2} 
+            color={textColor}
+            style={{ fontWeight: '800' }}
+          >
+            {title}
+          </ThemeText>
+        </View>
       </View>
       
       {!isCompact && description && (

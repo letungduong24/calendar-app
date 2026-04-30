@@ -15,17 +15,19 @@ import { Colors, Spacing, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';
 import AppointmentCard from '../components/AppointmentCard';
 import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
-import { useAppointments, Appointment } from '../hooks/useAppointments';
+import { useAppointments, Appointment, useMonthlyCounts } from '../hooks/useAppointments';
 import { useAlertStore } from '../store/useAlertStore';
 
 export default function CalendarMonthScreen({ navigation }: any) {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [currentMonth, setCurrentMonth] = useState(todayStr.substring(0, 7));
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const { appointments, isLoading, deleteAppointment } = useAppointments(selectedDate);
+  const { data: counts } = useMonthlyCounts(currentMonth);
 
   const handleEdit = () => {
     if (selectedAppointment) {
@@ -54,6 +56,25 @@ export default function CalendarMonthScreen({ navigation }: any) {
     );
   };
 
+  const markedDates = React.useMemo(() => {
+    const marks: any = {};
+    
+    // Add dots for all days with events
+    Object.keys(counts || {}).forEach(date => {
+      marks[date] = { marked: true, dotColor: Colors.primary };
+    });
+
+    // Special handling for selected date
+    marks[selectedDate] = {
+      ...marks[selectedDate],
+      selected: true,
+      selectedColor: Colors.black,
+      dotColor: marks[selectedDate]?.marked ? Colors.white : undefined
+    };
+
+    return marks;
+  }, [counts, selectedDate]);
+
   return (
     <View style={styles.container}>
       {/* Fixed Calendar Section */}
@@ -62,9 +83,8 @@ export default function CalendarMonthScreen({ navigation }: any) {
           <Calendar
             current={selectedDate}
             onDayPress={(day: any) => setSelectedDate(day.dateString)}
-            markedDates={{
-              [selectedDate]: { selected: true, selectedColor: Colors.black },
-            }}
+            onMonthChange={(month: any) => setCurrentMonth(month.dateString.substring(0, 7))}
+            markedDates={markedDates}
             theme={{
               backgroundColor: Colors.white,
               calendarBackground: Colors.white,

@@ -27,26 +27,70 @@ export class AppointmentsService {
     });
   }
 
-  async findByRange(
-    user: { userId: number },
-    startDate: string,
-    endDate: string,
-    attendeeName?: string,
-  ): Promise<Appointment[]> {
-    const results = await this.appointmentsRepository.find({
+  async findOne(user: { userId: number }, id: number): Promise<Appointment> {
+    const appointment = await this.appointmentsRepository.findOne({
+      where: { id, user: { id: user.userId } },
+      relations: ['attendees'],
+    });
+    if (!appointment) throw new NotFoundException('Không tìm thấy lịch hẹn');
+    return appointment;
+  }
+
+  async getMonthlyCounts(user: { userId: number }, month: string): Promise<Record<string, number>> {
+    const [year, m] = month.split('-').map(Number);
+    const lastDay = new Date(year, m, 0).getDate();
+    const startDate = `${month}-01`;
+    const endDate = `${month}-${String(lastDay).padStart(2, '0')}`;
+
+    const appointments = await this.appointmentsRepository.find({
       where: {
         user: { id: user.userId },
         date: Between(startDate, endDate),
       },
+      select: ['date'],
+    });
+
+    const counts: Record<string, number> = {};
+    appointments.forEach(a => {
+      counts[a.date] = (counts[a.date] || 0) + 1;
+    });
+    return counts;
+  }
+
+  async findByRange(
+    user: { userId: number },
+    startDate: string,
+    endDate: string,
+    attendeeNames?: string[],
+    minTime?: string,
+    maxTime?: string,
+  ): Promise<Appointment[]> {
+    const where: FindOptionsWhere<Appointment> = {
+      user: { id: user.userId },
+      date: Between(startDate, endDate),
+    };
+
+    if (minTime && maxTime) {
+      where.time = Between(minTime, maxTime);
+    } else if (minTime) {
+      where.time = MoreThanOrEqual(minTime);
+    } else if (maxTime) {
+      where.time = LessThanOrEqual(maxTime);
+    }
+
+    const results = await this.appointmentsRepository.find({
+      where,
       relations: ['attendees'],
       order: { date: 'ASC', time: 'ASC' },
     });
 
-    if (!attendeeName) return results;
+    if (!attendeeNames || attendeeNames.length === 0) return results;
 
-    const normalized = attendeeName.trim().toLowerCase();
+    const normalizedNames = attendeeNames.map(n => n.trim().toLowerCase());
     return results.filter(a =>
-      a.attendees?.some(p => p.name.trim().toLowerCase().includes(normalized)),
+      normalizedNames.every(name =>
+        a.attendees?.some(p => p.name.trim().toLowerCase().includes(name)),
+      ),
     );
   }
 
@@ -110,7 +154,8 @@ export class AppointmentsService {
       where: { 
         user: { id: userId },
         date: date
-      }
+      },
+      relations: ['attendees']
     });
 
     for (const appt of allAppointments) {
@@ -127,13 +172,40 @@ export class AppointmentsService {
       const isOverlapping = Math.max(newStart, apptStart) < Math.min(newEnd, apptEnd);
 
       if (isOverlapping) {
-        const displayEnd = appt.endTime ? appt.endTime : '...';
-        throw new ConflictException(`Lịch hẹn bị trùng với: ${appt.title} (${appt.time} - ${displayEnd})`);
+        throw new ConflictException({
+          message: `Lịch hẹn bị trùng với: ${appt.title} (${appt.time})`,
+          conflictingAppointment: {
+            id: appt.id,
+            title: appt.title,
+            date: appt.date,
+            time: appt.time,
+            endTime: appt.endTime,
+            description: appt.description,
+            location: appt.location,
+            reminder: appt.reminder,
+            attendees: appt.attendees?.map(p => ({ id: p.id, name: p.name })) || [],
+          },
+        });
       }
     }
   }
 
-  async remove(user: { userId: number }, id: number): Promise<void> {
-    await this.appointmentsRepository.delete({ id, user: { id: user.userId } });
+  async remove(user: { userId: number }, id: number): Promise<Appointment | null> {
+    const appointment = await this.appointmentsRepository.findOne({ 
+      where: { id, user: { id: user.userId } } 
+    });
+    if (appointment) {
+      await this.appointmentsRepository.remove(appointment);
+      return appointment;
+    }
+    return null;
+  }
+
+  async removeBatch(user: { userId: number }, ids: number[]): Promise<number> {
+    const result = await this.appointmentsRepository.delete({
+      id: In(ids),
+      user: { id: user.userId },
+    });
+    return result.affected || 0;
   }
 }
