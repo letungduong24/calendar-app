@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Modal, StyleSheet, TouchableOpacity, ScrollView, TouchableWithoutFeedback, Dimensions, InteractionManager } from 'react-native';
-import { X, Calendar, Clock, Users, Bell } from 'lucide-react-native';
+import { X, Calendar, Clock, Users, Bell, MapPin, AlignLeft } from 'lucide-react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -126,6 +126,34 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 </ThemeText>
               </View>
             </View>
+
+            {appointment?.location && (
+              <View style={styles.infoRow}>
+                <View style={styles.iconContainer}>
+                  <MapPin size={20} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemeText color={Colors.textSecondary} variant="small">ĐỊA ĐIỂM</ThemeText>
+                  <ThemeText style={styles.infoText}>
+                    {appointment.location}
+                  </ThemeText>
+                </View>
+              </View>
+            )}
+
+            {appointment?.description && (
+              <View style={styles.infoRow}>
+                <View style={styles.iconContainer}>
+                  <AlignLeft size={20} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemeText color={Colors.textSecondary} variant="small">MÔ TẢ</ThemeText>
+                  <ThemeText style={[styles.infoText, { fontWeight: '500', lineHeight: 22 }]}>
+                    {appointment.description}
+                  </ThemeText>
+                </View>
+              </View>
+            )}
 
             <View style={styles.infoRow}>
               <View style={styles.iconContainer}>

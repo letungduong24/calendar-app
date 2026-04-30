@@ -52,52 +52,54 @@ export default function CalendarScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Fixed Header Section */}
-      <View style={styles.dateHeader}>
-        <View style={styles.unifiedDateCard}>
-          <View style={styles.dateTextContainer}>
-            <ThemeText style={styles.dayOfWeek}>{dayOfWeek}</ThemeText>
-            <View style={styles.dateRow}>
-              <ThemeText style={styles.dateNum}>{dayMonth}</ThemeText>
-              <ThemeText style={styles.monthLabel}> {monthName}</ThemeText>
+      <View style={styles.contentWrapper}>
+        {/* Fixed Header Section */}
+        <View style={styles.dateHeader}>
+          <View style={styles.unifiedDateCard}>
+            <View style={styles.dateTextContainer}>
+              <ThemeText style={styles.dayOfWeek}>{dayOfWeek}</ThemeText>
+              <View style={styles.dateRow}>
+                <ThemeText style={styles.dateNum}>{dayMonth}</ThemeText>
+                <ThemeText style={styles.monthLabel}> {monthName}</ThemeText>
+              </View>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.circlePlus} 
+              onPress={() => navigation.navigate('AddEvent', { initialDate: todayStr })}
+            >
+              <Plus size={24} color={Colors.white} />
+            </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.circlePlus} 
-            onPress={() => navigation.navigate('AddEvent', { initialDate: todayStr })}
-          >
-            <Plus size={24} color={Colors.white} />
-          </TouchableOpacity>
+          <ThemeText style={styles.subTitle}>Lịch hẹn hôm nay</ThemeText>
         </View>
-        <ThemeText style={styles.subTitle}>Lịch hẹn hôm nay</ThemeText>
-      </View>
 
-      {/* Scrollable Appointments Section */}
-      <ScrollView 
-        style={styles.scrollArea}
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 50 }} />
-        ) : appointments.length > 0 ? (
-          appointments.map((appt) => (
-            <AppointmentCard 
-              key={appt.id} 
-              appointment={appt} 
-              onPress={() => {
-                setSelectedAppointment(appt);
-                setIsModalVisible(true);
-              }}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyContainer}>
-            <ThemeText color={Colors.textTertiary}>Hôm nay bạn không có lịch hẹn nào</ThemeText>
-          </View>
-        )}
-      </ScrollView>
+        {/* Scrollable Appointments Section */}
+        <ScrollView 
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xxl }} />
+          ) : appointments.length > 0 ? (
+            appointments.map((appt) => (
+              <AppointmentCard 
+                key={appt.id} 
+                appointment={appt} 
+                onPress={() => {
+                  setSelectedAppointment(appt);
+                  setIsModalVisible(true);
+                }}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <ThemeText color={Colors.textTertiary}>Hôm nay bạn không có lịch hẹn nào</ThemeText>
+            </View>
+          )}
+        </ScrollView>
+      </View>
 
       <AppointmentDetailModal 
         isVisible={isModalVisible}
@@ -111,9 +113,21 @@ export default function CalendarScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background,
+    alignItems: 'center', // Center content on large screens
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 600, // Limit width on tablets for better readability
+  },
   scrollArea: { flex: 1 },
-  scrollContent: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
+  scrollContent: { 
+    paddingHorizontal: Spacing.lg, 
+    paddingBottom: Spacing.xxl 
+  },
   dateHeader: { 
     marginTop: Spacing.md, 
     marginBottom: Spacing.sm,
@@ -126,7 +140,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -147,13 +161,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  dateNum: { fontSize: 32, fontWeight: '800', color: Colors.text },
-  monthLabel: { fontSize: 18, fontWeight: '700', color: Colors.textSecondary },
-  subTitle: { fontSize: 22, fontWeight: '800', color: Colors.text, marginLeft: 4 },
+  dateNum: { fontSize: Typography.h2.fontSize, fontWeight: '800', color: Colors.text },
+  monthLabel: { fontSize: Typography.title.fontSize, fontWeight: '700', color: Colors.textSecondary },
+  subTitle: { fontSize: Typography.title.fontSize + 2, fontWeight: '800', color: Colors.text, marginLeft: 4 },
   circlePlus: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: Spacing.xxl + 8,
+    height: Spacing.xxl + 8,
+    borderRadius: (Spacing.xxl + 8) / 2,
     backgroundColor: Colors.black,
     justifyContent: 'center',
     alignItems: 'center',

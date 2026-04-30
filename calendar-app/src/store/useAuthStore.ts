@@ -12,22 +12,29 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
-  setToken: (token: string) => Promise<void>;
+  setToken: (token: string | null) => Promise<void>;
   setUser: (user: User | null) => void;
   updateProfile: (data: { name: string; password?: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  token: null,
   isLoading: true,
 
-  setToken: async (token: string) => {
-    await SecureStore.setItemAsync('userToken', token);
+  setToken: async (token: string | null) => {
+    if (token) {
+      await SecureStore.setItemAsync('userToken', token);
+    } else {
+      await SecureStore.deleteItemAsync('userToken');
+    }
+    set({ token });
   },
 
   setUser: (user: User | null) => {
@@ -82,18 +89,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync('userToken');
+    await get().setToken(null);
     set({ user: null, isLoading: false });
   },
 
   getMe: async () => {
     try {
       set({ isLoading: true });
+      const storedToken = await SecureStore.getItemAsync('userToken');
+      if (storedToken) {
+        set({ token: storedToken });
+      }
       const response = await apiClient.get('/auth/profile');
       set({ user: response.data, isLoading: false });
     } catch (error) {
       set({ user: null, isLoading: false });
-      await SecureStore.deleteItemAsync('userToken');
+      await get().setToken(null);
     }
   },
 }));

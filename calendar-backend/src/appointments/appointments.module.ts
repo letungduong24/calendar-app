@@ -9,5 +9,6 @@ import { AppointmentsController } from './appointments.controller';
   imports: [TypeOrmModule.forFeature([Appointment, Person])],
   providers: [AppointmentsService],
   controllers: [AppointmentsController],
+  exports: [AppointmentsService],
 })
 export class AppointmentsModule {}

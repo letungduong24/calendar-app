@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, FindOptionsWhere } from 'typeorm';
+import { Repository, In, FindOptionsWhere, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Appointment } from './appointment.entity';
 import { User } from '../users/user.entity';
 import { Person } from '../people/person.entity';
@@ -23,8 +23,31 @@ export class AppointmentsService {
     return this.appointmentsRepository.find({
       where,
       relations: ['attendees'],
-      order: { time: 'ASC' },
+      order: { date: 'ASC', time: 'ASC' },
     });
+  }
+
+  async findByRange(
+    user: { userId: number },
+    startDate: string,
+    endDate: string,
+    attendeeName?: string,
+  ): Promise<Appointment[]> {
+    const results = await this.appointmentsRepository.find({
+      where: {
+        user: { id: user.userId },
+        date: Between(startDate, endDate),
+      },
+      relations: ['attendees'],
+      order: { date: 'ASC', time: 'ASC' },
+    });
+
+    if (!attendeeName) return results;
+
+    const normalized = attendeeName.trim().toLowerCase();
+    return results.filter(a =>
+      a.attendees?.some(p => p.name.trim().toLowerCase().includes(normalized)),
+    );
   }
 
   async create(user: { userId: number }, data: CreateAppointmentDto): Promise<Appointment> {

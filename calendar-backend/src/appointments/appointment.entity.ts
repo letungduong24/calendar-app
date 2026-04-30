@@ -22,6 +22,9 @@ export class Appointment {
   @Column({ nullable: true })
   description?: string;
 
+  @Column({ nullable: true })
+  location?: string;
+
   @Column({ default: 0 })
   reminder: number;
 

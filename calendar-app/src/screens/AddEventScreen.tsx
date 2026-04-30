@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { toast } from 'react-native-sonner';
-import { Calendar, Clock, Type, X, UserPlus, CheckCircle2 } from 'lucide-react-native';
+import { Calendar, Clock, Type, X, UserPlus, CheckCircle2, MapPin } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors, Spacing, Typography, BorderRadius } from '../theme/Theme';
@@ -32,6 +32,8 @@ export default function AddEventScreen({ navigation, route }: any) {
   };
 
   const [title, setTitle] = useState(editAppointment?.title || '');
+  const [description, setDescription] = useState(editAppointment?.description || '');
+  const [location, setLocation] = useState(editAppointment?.location || '');
   const [dateObj, setDateObj] = useState(
     editAppointment?.date ? new Date(editAppointment.date) : 
     (initialDateStr ? new Date(initialDateStr) : new Date())
@@ -91,12 +93,14 @@ export default function AddEventScreen({ navigation, route }: any) {
     const finalTime = timeObj.getHours().toString().padStart(2, '0') + ':' + timeObj.getMinutes().toString().padStart(2, '0');
     const finalEndTime = hasEndTime 
       ? endTimeObj.getHours().toString().padStart(2, '0') + ':' + endTimeObj.getMinutes().toString().padStart(2, '0')
-      : null;
+      : undefined;
     
     try {
       setSaving(true);
       const data = {
         title,
+        description: description || undefined,
+        location: location || undefined,
         date: finalDate,
         time: finalTime,
         endTime: finalEndTime,
@@ -144,6 +148,34 @@ export default function AddEventScreen({ navigation, route }: any) {
                 onChangeText={setTitle} 
                 placeholder="Ví dụ: Họp team UI/UX" 
                 placeholderTextColor={Colors.placeholder}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemeText variant="small" color={Colors.textSecondary} style={styles.label}>ĐỊA ĐIỂM</ThemeText>
+            <View style={styles.inputContainer}>
+              <MapPin color={Colors.textTertiary} size={20} style={styles.inputIcon} />
+              <TextInput 
+                style={styles.input} 
+                value={location} 
+                onChangeText={setLocation} 
+                placeholder="Ví dụ: Phòng họp 1 hoặc Google Meet" 
+                placeholderTextColor={Colors.placeholder}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <ThemeText variant="small" color={Colors.textSecondary} style={styles.label}>MÔ TẢ</ThemeText>
+            <View style={[styles.inputContainer, { height: 100, alignItems: 'flex-start', paddingTop: 15 }]}>
+              <TextInput 
+                style={[styles.input, { textAlignVertical: 'top' }]} 
+                value={description} 
+                onChangeText={setDescription} 
+                placeholder="Thêm mô tả cho lịch hẹn..." 
+                placeholderTextColor={Colors.placeholder}
+                multiline
               />
             </View>
           </View>

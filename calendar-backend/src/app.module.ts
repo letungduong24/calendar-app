@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PeopleModule } from './people/people.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
     UsersModule,
     PeopleModule,
     AppointmentsModule,
+    ChatbotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

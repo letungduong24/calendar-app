@@ -10,6 +10,7 @@ export interface Appointment {
   time: string;
   endTime?: string;
   description?: string;
+  location?: string;
   reminder: number;
   attendees: Person[];
 }

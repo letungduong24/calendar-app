@@ -21,6 +21,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   description?: string;
 
+  @IsString({ message: 'Địa điểm phải là một chuỗi ký tự' })
+  @IsOptional()
+  location?: string;
+
   @IsNumber({}, { message: 'Thời gian nhắc nhở phải là một con số' })
   @IsOptional()
   reminder?: number;

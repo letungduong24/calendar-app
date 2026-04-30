@@ -1,3 +1,12 @@
+import { Dimensions, PixelRatio } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Guideline sizes based on standard mobile device (e.g. iPhone 13)
+const guidelineBaseWidth = 390;
+
+const scale = (size: number) => (SCREEN_WIDTH / guidelineBaseWidth) * size;
+
 export const Colors = {
   background: '#EBEBE6',
   surface: '#FFFFFF',
@@ -9,15 +18,16 @@ export const Colors = {
   white: '#FFFFFF',
   black: '#000000',
   placeholder: '#A8A8A8',
+  error: '#FF3B30',
   
-  // Design System Color Pairs (Background & Corresponding Dark Text)
+  // Design System Color Pairs
   cards: [
-    { bg: '#DDA76A', text: '#3E2A14' }, // Mustard
-    { bg: '#B2B9BB', text: '#2D3A31' }, // Gray
-    { bg: '#C2B6D6', text: '#3D2D50' }, // Lavender
-    { bg: '#D6A6A6', text: '#502D2D' }, // Pink
-    { bg: '#A6D6D2', text: '#2D504D' }, // Teal
-    { bg: '#D6D6A6', text: '#4D502D' }, // Green
+    { bg: '#DDA76A', text: '#3E2A14' }, 
+    { bg: '#B2B9BB', text: '#2D3A31' }, 
+    { bg: '#C2B6D6', text: '#3D2D50' }, 
+    { bg: '#D6A6A6', text: '#502D2D' }, 
+    { bg: '#A6D6D2', text: '#2D504D' }, 
+    { bg: '#D6D6A6', text: '#4D502D' }, 
   ],
 
   // Individual colors for backward compatibility
@@ -31,52 +41,54 @@ export const Colors = {
 };
 
 export const Spacing = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 20,
-  xl: 30,
-  xxl: 40,
+  xs: scale(4),
+  sm: scale(8),
+  md: scale(16),
+  lg: scale(20),
+  xl: scale(30),
+  xxl: scale(40),
 };
 
 export const BorderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 20,
-  xl: 30,
-  round: 50,
+  sm: scale(8),
+  md: scale(12),
+  lg: scale(20),
+  xl: scale(30),
+  round: scale(50),
 };
 
 export const Typography = {
   h1: {
-    fontSize: 48,
+    fontSize: scale(48),
     fontWeight: '900' as const,
     letterSpacing: -1,
   },
   h2: {
-    fontSize: 34,
+    fontSize: scale(34),
     fontWeight: '900' as const,
   },
   h3: {
-    fontSize: 28,
+    fontSize: scale(28),
     fontWeight: '800' as const,
   },
   title: {
-    fontSize: 20,
+    fontSize: scale(20),
     fontWeight: '800' as const,
   },
   body: {
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600' as const,
   },
   caption: {
-    fontSize: 14,
+    fontSize: scale(14),
     fontWeight: '800' as const,
     textTransform: 'uppercase' as const,
     letterSpacing: 1,
   },
   small: {
-    fontSize: 12,
+    fontSize: scale(12),
     fontWeight: '800' as const,
   }
 };
+
+export { SCREEN_WIDTH, SCREEN_HEIGHT };
