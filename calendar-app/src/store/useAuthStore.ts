@@ -14,13 +14,12 @@ interface User {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   getMe: () => Promise<void>;
-  setTokens: (accessToken: string | null, refreshToken: string | null) => Promise<void>;
+  setTokens: (accessToken: string | null) => Promise<void>;
   setUser: (user: User | null) => void;
   updateProfile: (data: { name: string; password?: string }) => Promise<void>;
 }
@@ -28,23 +27,16 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
-  refreshToken: null,
   isLoading: true,
 
-  setTokens: async (accessToken: string | null, refreshToken: string | null) => {
+  setTokens: async (accessToken: string | null) => {
     if (accessToken) {
       await SecureStore.setItemAsync('accessToken', accessToken);
     } else {
       await SecureStore.deleteItemAsync('accessToken');
     }
     
-    if (refreshToken) {
-      await SecureStore.setItemAsync('refreshToken', refreshToken);
-    } else {
-      await SecureStore.deleteItemAsync('refreshToken');
-    }
-    
-    set({ accessToken, refreshToken });
+    set({ accessToken });
   },
 
   setUser: (user: User | null) => {
@@ -55,8 +47,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.post('/auth/login', credentials);
-      const { access_token, refresh_token } = response.data;
-      await get().setTokens(access_token, refresh_token);
+      const { access_token } = response.data;
+      await get().setTokens(access_token);
       await get().getMe();
       toast.success('Đăng nhập thành công');
     } catch (error: any) {
@@ -71,8 +63,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.post('/auth/register', data);
-      const { access_token, refresh_token } = response.data;
-      await get().setTokens(access_token, refresh_token);
+      const { access_token } = response.data;
+      await get().setTokens(access_token);
       await get().getMe();
       toast.success('Đăng ký tài khoản thành công');
     } catch (error: any) {
@@ -87,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const response = await apiClient.patch('/users/profile', data);
-      await get().getMe(); // Fetch fresh user data to ensure sync
+      await get().getMe(); 
       set({ isLoading: false });
       toast.success('Cập nhật thông tin thành công');
     } catch (error: any) {
@@ -122,7 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.warn('QueryClient clear error', queryError);
     }
 
-    await get().setTokens(null, null);
+    await get().setTokens(null);
     set({ user: null, isLoading: false });
   },
 
@@ -130,17 +122,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const storedAccessToken = await SecureStore.getItemAsync('accessToken');
-      const storedRefreshToken = await SecureStore.getItemAsync('refreshToken');
       
       if (storedAccessToken) {
-        set({ accessToken: storedAccessToken, refreshToken: storedRefreshToken });
+        set({ accessToken: storedAccessToken });
       }
       
       const response = await apiClient.get('/auth/profile');
       set({ user: response.data, isLoading: false });
     } catch (error) {
       set({ user: null, isLoading: false });
-      await get().setTokens(null, null);
+      await get().setTokens(null);
     }
   },
 }));

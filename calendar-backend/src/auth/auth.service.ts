@@ -49,19 +49,10 @@ export class AuthService {
     return this.login(user);
   }
 
-  async login(user: User | Partial<User>): Promise<{ access_token: string; refresh_token: string; user: Partial<User> }> {
+  async login(user: User | Partial<User>): Promise<{ access_token: string; user: Partial<User> }> {
     const payload = { email: user.email, sub: user.id };
-    const refresh_token = this.jwtService.sign(payload, { 
-      expiresIn: (this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d') as any 
-    });
-
-    if (user.id) {
-      await this.usersService.setCurrentRefreshToken(refresh_token, user.id);
-    }
-
     return {
       access_token: this.jwtService.sign(payload),
-      refresh_token,
       user: {
         id: user.id,
         email: user.email,
@@ -71,37 +62,8 @@ export class AuthService {
     };
   }
 
-  async refresh(token: string): Promise<{ access_token: string; refresh_token: string }> {
-    try {
-      const payload = this.jwtService.verify(token);
-      const user = await this.usersService.getUserIfRefreshTokenMatches(token, payload.sub);
-      
-      if (!user) {
-        throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
-      }
-
-      const newPayload = { email: user.email, sub: user.id };
-      
-      // Không xoay vòng refresh token nữa để tránh race condition
-      // Trả về lại chính token cũ hoặc tạo mới nếu bạn muốn, nhưng ở đây tôi giữ nguyên token cũ
-      return {
-        access_token: this.jwtService.sign(newPayload),
-        refresh_token: token, 
-      };
-    } catch (e) {
-      console.error('--- REFRESH TOKEN ERROR ---');
-      console.error('=> Error details:', e.message || e);
-      if (e instanceof UnauthorizedException) {
-        console.error('=> Reason: Refresh token mismatch or user not found');
-      } else {
-        console.error('=> Reason: JWT Verification failed (Expired or Invalid)');
-      }
-      throw new UnauthorizedException('Refresh token không hợp lệ');
-    }
-  }
-
   async logout(userId: number) {
-    await this.usersService.removeRefreshToken(userId);
+    // Không cần xóa refresh token nữa
   }
 
   async googleLogin(user: {

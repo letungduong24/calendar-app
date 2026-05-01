@@ -55,8 +55,8 @@ export default function LoginScreen({ navigation }: any) {
           idToken: userInfo.data.idToken,
         });
         
-        const { access_token, refresh_token } = response.data;
-        await setTokens(access_token, refresh_token);
+        const { access_token } = response.data;
+        await setTokens(access_token);
         await getMe();
       }
     } catch (error: any) {
