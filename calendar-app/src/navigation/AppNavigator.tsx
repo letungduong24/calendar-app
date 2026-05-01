@@ -24,6 +24,7 @@ const AppTheme = {
   colors: {
     ...DefaultTheme.colors,
     background: Colors.background,
+    card: Colors.background,
   },
 };
 

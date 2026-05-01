@@ -18,6 +18,8 @@ import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
 import { useAppointments, Appointment, useMonthlyCounts } from '../hooks/useAppointments';
 import { useAlertStore } from '../store/useAlertStore';
 
+import { AppointmentSkeleton } from '../components/AppointmentSkeleton';
+
 export default function CalendarMonthScreen({ navigation }: any) {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -124,22 +126,31 @@ export default function CalendarMonthScreen({ navigation }: any) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {appointments.map((appt) => (
-          <AppointmentCard 
-            key={appt.id} 
-            appointment={appt} 
-            variant="compact"
-            onPress={() => {
-              setSelectedAppointment(appt);
-              setIsModalVisible(true);
-            }}
-          />
-        ))}
-
-        {appointments.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <ThemeText color={Colors.textTertiary}>Không có lịch hẹn nào</ThemeText>
+        {isLoading ? (
+          <View style={{ width: '100%' }}>
+            <AppointmentSkeleton />
+            <AppointmentSkeleton />
           </View>
+        ) : (
+          <>
+            {appointments.map((appt) => (
+              <AppointmentCard 
+                key={appt.id} 
+                appointment={appt} 
+                variant="compact"
+                onPress={() => {
+                  setSelectedAppointment(appt);
+                  setIsModalVisible(true);
+                }}
+              />
+            ))}
+
+            {appointments.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <ThemeText color={Colors.textTertiary}>Không có lịch hẹn nào</ThemeText>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 

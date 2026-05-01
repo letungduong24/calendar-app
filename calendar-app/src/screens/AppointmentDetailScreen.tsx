@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, SafeAreaView, TouchableOpacity, ScrollView, StatusBar, Platform } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, StatusBar, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Calendar, Clock, Users, Bell, MapPin, AlignLeft, Edit3, Trash2 } from 'lucide-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../theme/Theme';
 import { ThemeText } from '../components/ThemeText';

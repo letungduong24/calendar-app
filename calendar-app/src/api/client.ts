@@ -53,6 +53,7 @@ apiClient.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest._retry = true; // Đảm bảo các request trong hàng đợi cũng được đánh dấu retry
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return apiClient(originalRequest);
           })
@@ -73,6 +74,14 @@ apiClient.interceptors.response.use(
 
           await SecureStore.setItemAsync('accessToken', access_token);
           await SecureStore.setItemAsync('refreshToken', refresh_token);
+
+          // Đồng bộ với Zustand Store nếu có thể (tránh circular dependency bằng dynamic import)
+          try {
+            const { useAuthStore } = require('../store/useAuthStore');
+            useAuthStore.getState().setTokens(access_token, refresh_token);
+          } catch (e) {
+            console.warn('Could not sync tokens to Zustand store:', e);
+          }
 
           apiClient.defaults.headers.common.Authorization = `Bearer ${access_token}`;
           originalRequest.headers.Authorization = `Bearer ${access_token}`;

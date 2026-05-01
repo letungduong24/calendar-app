@@ -8,12 +8,11 @@ import { ThemeAlert } from './src/components/ThemeAlert';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDB } from './src/db/database';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
-import { View, Text } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { View, Text, ActivityIndicator, Image } from 'react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './src/api/queryClient';
 import { useAuthStore } from './src/store/useAuthStore';
-
-// Create a client
-const queryClient = new QueryClient();
+import { Colors } from './src/theme/Theme';
 
 import * as Notifications from 'expo-notifications';
 import { navigate } from './src/navigation/navigationUtils';
@@ -53,22 +52,52 @@ export default function App() {
 
   if (!isReady) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: Colors.background 
+      }}>
+        <View style={{ alignItems: 'center' }}>
+          <Image 
+            source={require('./assets/icon.png')} 
+            style={{ 
+              width: 100, 
+              height: 100, 
+              borderRadius: 24,
+              marginBottom: 20,
+            }} 
+          />
+          <Text style={{ 
+            fontSize: 28, 
+            fontWeight: '900', 
+            color: Colors.text,
+            letterSpacing: 1
+          }}>
+            Ailendar
+          </Text>
+          <ActivityIndicator 
+            color={Colors.primary} 
+            size="small" 
+            style={{ marginTop: 40 }} 
+          />
+        </View>
       </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <QueryClientProvider client={queryClient}>
-          <AppNavigator />
-          <Toaster theme="light" />
-          <ThemeAlert />
-          <StatusBar style="auto" />
-        </QueryClientProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <QueryClientProvider client={queryClient}>
+            <AppNavigator />
+            <Toaster theme="light" />
+            <ThemeAlert />
+            <StatusBar style="auto" />
+          </QueryClientProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </View>
   );
 }

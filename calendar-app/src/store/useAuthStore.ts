@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { toast } from 'react-native-sonner';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/client';
 
 interface User {
@@ -103,6 +104,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (e) {
       console.warn('Logout API failed', e);
     }
+
+    try {
+      const hasPreviousSignIn = await GoogleSignin.hasPreviousSignIn();
+      if (hasPreviousSignIn) {
+        await GoogleSignin.signOut();
+        await GoogleSignin.revokeAccess();
+      }
+    } catch (googleError) {
+      console.warn('Google SignOut error', googleError);
+    }
+
+    try {
+      const { queryClient } = require('../api/queryClient');
+      queryClient.clear();
+    } catch (queryError) {
+      console.warn('QueryClient clear error', queryError);
+    }
+
     await get().setTokens(null, null);
     set({ user: null, isLoading: false });
   },

@@ -8,6 +8,8 @@ import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
 import { useAppointments, Appointment } from '../hooks/useAppointments';
 import { useAlertStore } from '../store/useAlertStore';
 
+import { AppointmentSkeleton } from '../components/AppointmentSkeleton';
+
 export default function CalendarScreen({ navigation }: any) {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -81,7 +83,11 @@ export default function CalendarScreen({ navigation }: any) {
           showsVerticalScrollIndicator={false}
         >
           {isLoading ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xxl }} />
+            <View style={{ width: '100%' }}>
+              <AppointmentSkeleton />
+              <AppointmentSkeleton />
+              <AppointmentSkeleton />
+            </View>
           ) : appointments.length > 0 ? (
             appointments.map((appt) => (
               <AppointmentCard 

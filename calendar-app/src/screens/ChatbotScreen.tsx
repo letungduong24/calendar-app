@@ -6,10 +6,10 @@ import {
   ScrollView, 
   TouchableOpacity, 
   ActivityIndicator,
-  SafeAreaView,
   Keyboard,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useChat } from '@ai-sdk/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { DefaultChatTransport } from 'ai';

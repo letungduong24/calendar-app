@@ -92,6 +92,13 @@ export class AuthService {
         refresh_token: newRefreshToken,
       };
     } catch (e) {
+      console.error('--- REFRESH TOKEN ERROR ---');
+      console.error('=> Error details:', e.message || e);
+      if (e instanceof UnauthorizedException) {
+        console.error('=> Reason: Refresh token mismatch or user not found');
+      } else {
+        console.error('=> Reason: JWT Verification failed (Expired or Invalid)');
+      }
       throw new UnauthorizedException('Refresh token không hợp lệ');
     }
   }
