@@ -60,6 +60,8 @@ export class AuthController {
 
   @Post('refresh')
   async refresh(@Body('refresh_token') refreshToken: string) {
+    console.log(`--- REFRESH REQUEST RECEIVED ---`);
+    console.log(`=> Token: ${refreshToken ? (refreshToken.substring(0, 20) + '...') : 'NULL'}`);
     return this.authService.refresh(refreshToken);
   }
 

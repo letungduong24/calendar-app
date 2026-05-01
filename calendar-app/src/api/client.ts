@@ -88,7 +88,13 @@ apiClient.interceptors.response.use(
 
           processQueue(null, access_token);
           return apiClient(originalRequest);
-        } catch (refreshError) {
+        } catch (refreshError: any) {
+          console.error('--- FRONTEND REFRESH FAILED ---');
+          console.error('=> Error:', refreshError.message);
+          if (refreshError.response) {
+            console.error('=> Response Data:', refreshError.response.data);
+            console.error('=> Status:', refreshError.response.status);
+          }
           processQueue(refreshError, null);
           await SecureStore.deleteItemAsync('accessToken');
           await SecureStore.deleteItemAsync('refreshToken');
