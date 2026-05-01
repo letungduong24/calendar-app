@@ -16,7 +16,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
   async validate(
     accessToken: string,
-    refreshToken: string,
+    _refreshToken: string, // Đánh dấu là không dùng tới
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {

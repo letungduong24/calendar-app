@@ -45,7 +45,7 @@ export class AuthController {
 
     if (redirectUrl) {
       // For mobile app deep linking - matching new store naming
-      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}accessToken=${result.access_token}&refreshToken=${result.refresh_token}`;
+      const urlWithToken = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}accessToken=${result.access_token}`;
       console.log(`=> Đang Redirect về: ${urlWithToken}`);
       return res.redirect(urlWithToken);
     }

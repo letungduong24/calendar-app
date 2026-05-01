@@ -38,7 +38,7 @@ export class AuthService {
     return null;
   }
 
-  async register(registerDto: RegisterDto): Promise<{ access_token: string; refresh_token: string; user: Partial<User> }> {
+  async register(registerDto: RegisterDto): Promise<{ access_token: string; user: Partial<User> }> {
     const existingUser = await this.usersService.findOneByEmail(registerDto.email);
     if (existingUser) {
       throw new ConflictException('Email này đã được đăng ký');
@@ -72,7 +72,7 @@ export class AuthService {
     firstName: string;
     lastName: string;
     picture: string;
-  }): Promise<{ access_token: string; refresh_token: string; user: Partial<User> }> {
+  }): Promise<{ access_token: string; user: Partial<User> }> {
     const dbUser = await this.usersService.findOrCreateGoogleUser(user);
     if (!dbUser) {
       throw new InternalServerErrorException('Không thể tìm thấy hoặc tạo người dùng từ Google');
