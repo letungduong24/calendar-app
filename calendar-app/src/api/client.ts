@@ -13,7 +13,7 @@ const apiClient = axios.create({
 // Interceptor to add JWT token
 apiClient.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('accessToken');
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

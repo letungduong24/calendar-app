@@ -81,15 +81,12 @@ export class AuthService {
       }
 
       const newPayload = { email: user.email, sub: user.id };
-      const newRefreshToken = this.jwtService.sign(newPayload, { 
-        expiresIn: (this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d') as any 
-      });
-
-      await this.usersService.setCurrentRefreshToken(newRefreshToken, user.id);
-
+      
+      // Không xoay vòng refresh token nữa để tránh race condition
+      // Trả về lại chính token cũ hoặc tạo mới nếu bạn muốn, nhưng ở đây tôi giữ nguyên token cũ
       return {
         access_token: this.jwtService.sign(newPayload),
-        refresh_token: newRefreshToken,
+        refresh_token: token, 
       };
     } catch (e) {
       console.error('--- REFRESH TOKEN ERROR ---');
