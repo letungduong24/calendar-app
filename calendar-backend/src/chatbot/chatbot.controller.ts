@@ -64,11 +64,12 @@ export class ChatbotController {
     const lastMessage = messages[messages.length - 1];
     // DB saving logic removed
 
-    const today = new Date().toLocaleDateString('vi-VN', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
-    }).split('/').reverse().join('-'); // YYYY-MM-DD
+    // Get current time in Vietnam (GMT+7)
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
+    
+    const today = now.getFullYear() + '-' + 
+                 String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(now.getDate()).padStart(2, '0');
 
     // Sanitize history messages: strip tool parts from older messages to prevent
     // malformed tool_calls (missing 'arguments') error from Groq API.
@@ -93,7 +94,6 @@ export class ChatbotController {
     const sanitized = sanitizeMessages(messages);
     const modelMessages = await convertToModelMessages(sanitized);
 
-    const now = new Date();
     const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     const dayOfWeek = days[now.getDay()];
 
@@ -104,7 +104,8 @@ export class ChatbotController {
     const mondayNextWeek = new Date(now.getTime() + (daysToSunday + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const sundayNextWeek = new Date(now.getTime() + (daysToSunday + 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const currentTime = now.toTimeString().split(' ')[0].substring(0, 5); // HH:mm
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
 
     const result = streamText({
       model: groq('openai/gpt-oss-120b'),
